@@ -1,0 +1,6 @@
+[submodule "external/UGUI"]
+	path = external/UGUI
+	url = https://github.com/achimdoebler/UGUI
+[submodule "external/printf"]
+	path = external/printf
+	url = https://github.com/mpaland/printf
