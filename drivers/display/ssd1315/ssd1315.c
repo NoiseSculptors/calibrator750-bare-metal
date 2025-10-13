@@ -20,6 +20,8 @@
 /* ===== SSD1315 high-level ===== */
 #define I2C_ADDR 0x3C   /* common 128x64 modules */
 
+#define SSD1315_PRINTF_BUFSZ 256
+
 static inline void tiny_delay(unsigned n)
 {
     for (volatile unsigned i=0; i<n; i++) __asm__ volatile("nop");
