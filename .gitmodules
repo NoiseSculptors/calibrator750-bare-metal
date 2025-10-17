@@ -4,3 +4,6 @@
 [submodule "external/printf"]
 	path = external/printf
 	url = https://github.com/mpaland/printf
+[submodule "lib/noisesculptors-core"]
+	path = lib/noisesculptors-core
+	url = https://github.com/NoiseSculptors/noisesculptors-core

@@ -2,7 +2,6 @@
 #include "printf.h"
 #include "ssd1315.h"
 #include "ssd1315_UGUI.h"
-#include "ugui.h"
 #include <stdarg.h>
 #include <stdbool.h>
 #include <stdint.h>
@@ -24,5 +23,11 @@ int ssd1315_printf(int x, int y, const char *fmt, ...)
     UG_PutString(x, y, buf);
 
     return n;
+}
+
+void UG_DrawPixel_SSD1315(UG_S16 x, UG_S16 y, UG_COLOR c)
+{
+    // uGUI uses 16-bit RGB565 "color"; treat nonzero as ON
+    ssd1315_putpix((int)x, (int)y, c==0?C_BLACK:C_WHITE);
 }
 

@@ -2,6 +2,7 @@
 #include "init.h"
 #include "printf.h"
 #include "ssd1315.h"
+#include "ssd1315_UGUI.h"
 #include "ugui.h"
 #include "usart1.h"
 #include <math.h>

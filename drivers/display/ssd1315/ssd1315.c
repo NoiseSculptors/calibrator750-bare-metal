@@ -4,7 +4,6 @@
 #include "i2c.h"
 #include "memory.h"
 #include "rcc.h"
-#include "ugui.h"
 #include "ssd1315.h"
 #include <stdbool.h>
 #include <stdint.h>
@@ -243,10 +242,4 @@ void ssd1315_line(int x0, int y0, int x1, int y1, int color)
 }
 
 uint8_t *ssd1315_backbuf(void) { return back; }
-
-void UG_DrawPixel_SSD1315(UG_S16 x, UG_S16 y, UG_COLOR c)
-{
-    // uGUI uses 16-bit RGB565 "color"; treat nonzero as ON
-    ssd1315_putpix((int)x, (int)y, c==0?C_BLACK:C_WHITE);
-}
 

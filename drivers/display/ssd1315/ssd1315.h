@@ -2,7 +2,6 @@
 #ifndef SSD1315__H
 #define SSD1315__H
 
-#include "ugui.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -18,9 +17,6 @@ void ssd1315_flush(void);                // push back buffer to panel
 void ssd1315_swap(void);                 // swap front/back
 void ssd1315_line(int x0, int y0, int x1, int y1, int color);
 void ssd1315_putpix(int x, int y, int color); // color: 0/1
-
-/* uGUI */
-void UG_DrawPixel_SSD1315(UG_S16 x, UG_S16 y, UG_COLOR c);
 
 /* Get raw back buffer (if you want to custom-fill) */
 uint8_t *ssd1315_backbuf(void);
