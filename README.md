@@ -76,24 +76,29 @@ RUN = axi
 First build from the main directory.
 
 ```bash
-make
-```
+# Clone with submodules 
+git clone --recurse-submodules https://github.com/NoiseSculptors/calibrator750-bare-metal
 
-Then after editing your code:
+# (If you already cloned without --recurse-submodules)
+# git submodule sync --recursive
+# git submodule update --init --recursive
 
-```bash
-cd examples/oled_cube
-make clean
-<your_editor> oled_cube.c
-make
-```
+cd calibrator750-bare-metal/
 
-This compiles the example for the currently selected profile and produces:
+# Configure out-of-source (keeps tree clean; use Ninja for speed if you have it)
+# change RUN=flash to axi or dtcm as needed
+cmake -S . -B build \
+  -G Ninja \
+  -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi-gcc.cmake \
+  -DBOARD=calibrator750 \
+  -DRUN=flash \
+  -DCMAKE_BUILD_TYPE=Release
 
-```
-oled_cube.elf
-oled_cube.bin
-oled_cube.map
+cmake --build build
+
+# Binaries:
+# build/examples/<example>/<example>.bin
+
 ```
 
 ---
@@ -169,7 +174,7 @@ include/        → register headers
 src/            → core modules (init, NVIC, syscall, etc.)
 drivers/        → device drivers (e.g., SSD1315 OLED)
 examples/       → standalone demo programs
-external/       → bundled libraries (UGUI, printf)
+lib/            → bundled libraries (noisesculptors-core, UGUI, printf)
 ldscripts/      → linker scripts for Flash, AXI, DTCM
 startup/        → startup code and vector tables
 ```
