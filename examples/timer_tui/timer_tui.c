@@ -4,8 +4,8 @@
 #include "printf.h"
 #include "rcc.h"
 #include "timer.h"
-#include "usart1.h"
-#include "usart_uart.h"
+#include "serial.h"
+#include "usart_uart_lpuart.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -292,9 +292,10 @@ static void bump(int dir, bool bigstep)
 /* ------------------- Main ------------------- */
 int main(void)
 {
+
     clock_info_t ci;
-    ci = init_clock_adv(13,240,1,10,2);
-    init_usart1(ci);
+    ci = init_clock();
+    init_serial(&ci, 115200);
 
     /* defaults */
     ui.f_tim_hz = ci.hclk_hz;

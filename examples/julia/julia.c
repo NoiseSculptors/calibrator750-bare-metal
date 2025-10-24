@@ -1,7 +1,7 @@
 
 #include "init.h"
 #include "ssd1315.h"
-#include "usart1.h"
+#include "serial.h"
 #include "printf.h"
 #include <math.h>
 #include <stdint.h>

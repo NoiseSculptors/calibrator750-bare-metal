@@ -119,8 +119,8 @@
 
 void _putchar(char character){
     if(character=='\n')
-	    usart1_write_char('\r');
-	usart1_write_char(character);
+	    serial_write_char('\r');
+	serial_write_char(character);
 }
 
 // output function type

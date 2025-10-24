@@ -4,7 +4,7 @@
 #include "ssd1315.h"
 #include "ssd1315_UGUI.h"
 #include "ugui.h"
-#include "usart1.h"
+#include "serial.h"
 #include <math.h>
 #include <stdint.h>
 
@@ -12,7 +12,11 @@ static UG_GUI gui;
 
 int main(void)
 {
-    init_usart1(init_clock());
+
+    clock_info_t ci;
+    ci = init_clock();
+    init_serial(&ci, 115200);
+
     init_ssd1315();
 
     ssd1315_set_contrast(1);

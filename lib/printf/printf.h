@@ -34,7 +34,7 @@
 
 #include <stdarg.h>
 #include <stddef.h>
-#include "usart1.h"
+#include "serial.h"
 
 
 /* Disables support for %f %llu %p %e %g */

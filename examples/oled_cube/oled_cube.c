@@ -2,7 +2,7 @@
 #include "delay.h"
 #include "init.h"
 #include "ssd1315.h"
-#include "usart1.h"
+#include "serial.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -75,7 +75,11 @@ static void draw_frame(float ax, float ay){
 
 int main(void){
     // clocks, minimal delays etc. assumed done in your init code if needed
-    init_usart1(init_clock());
+
+    clock_info_t ci;
+    ci = init_clock();
+    init_serial(&ci, 115200);
+
     init_ssd1315();
     ssd1315_set_contrast(1);
 
