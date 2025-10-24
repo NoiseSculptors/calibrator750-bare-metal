@@ -2,12 +2,12 @@
 cmake_minimum_required(VERSION 3.19)
 
 add_firmware(
-  NAME oled_cube
-  SRCS oled_cube.c
+  NAME io 
+  SRCS io.c
   LIBS lib::ugui lib::printf driver::ssd1315 driver::ssd1315_ugui
 )
 
-target_compile_definitions(oled_cube PRIVATE
-  USE_FONT_6X8
+target_compile_definitions(io PRIVATE
+  USE_FONT_8X12
 )
 

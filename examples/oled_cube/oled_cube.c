@@ -1,8 +1,12 @@
 
 #include "delay.h"
+#include "dwt.h"
+#include "i2c.h"
 #include "init.h"
+#include "memory.h"
 #include "ssd1315.h"
-#include "usart1.h"
+#include "ssd1315_UGUI.h"
+#include "ugui.h"
 #include <stdbool.h>
 #include <stdint.h>
 
@@ -11,6 +15,8 @@
 #define TWO_PI 6.2831853f
 
 #define SZ 16
+
+static UG_GUI gui;
 
 float fast_sinf(float x);
 float fast_cosf(float x);
@@ -55,12 +61,7 @@ static inline bool proj(v3 p, int *sx, int *sy){
     return (x>=-1 && x<=SSD1315_W && y>=-1 && y<=SSD1315_H);
 }
 
-static inline void cls(void){
-    ssd1315_clear_back();
-}
-
 static void draw_frame(float ax, float ay){
-    cls();
     v3 v[8];
     for (int i=0;i<8;i++) v[i] = rot(CUBE[i], ax, ay);
     for (int i=0;i<12;i++){
@@ -70,23 +71,47 @@ static void draw_frame(float ax, float ay){
             ssd1315_line(x0,y0,x1,y1,1);
         }
     }
-    ssd1315_flush();
 }
 
 int main(void){
-    // clocks, minimal delays etc. assumed done in your init code if needed
-    init_usart1(init_clock());
-    init_ssd1315();
-    ssd1315_set_contrast(1);
 
-    float ax = 0.0f, ay = 0.0f;
+    clock_info_t ci;
+    ci = init_clock();
+
+    init_i2c3_pa8_pc9(&ci);
+    init_ssd1315(I2C3);
+    init_dwt(&ci);
+
+    ssd1315_set_contrast(10);
+    UG_Init(&gui, UG_DrawPixel_SSD1315, SSD1315_W, SSD1315_H);
+    UG_SetForecolor(C_WHITE);
+    UG_SetBackcolor(C_BLACK);
+    UG_FontSelect(&FONT_6X8);
+
+    uint32_t fps = 0, fps_display = 0;
+    float ax = 0.0f, ay = 0.0f;  
+
+    dwt_start();
+
     for (;;){
+
+        ssd1315_flush();
+        ssd1315_clear_back();
+
         draw_frame(ax, ay);
-        ax += 0.0031f;
-        ay += 0.0025f;
-        // Tiny frame pacing
-        for (volatile uint32_t _d=0; _d<40; ++_d) __asm__ volatile("nop");
+        ssd1315_printf(0,57,"FPS:%d",fps_display);
+
+        ax += 0.0031f; ay += 0.0025f;
+
+        fps++;
+
+        if(dwt_now() >= 480000000){
+            dwt_start();
+            fps_display = fps;
+            fps = 0;
+        } 
     }
+
     return 0;
 }
 

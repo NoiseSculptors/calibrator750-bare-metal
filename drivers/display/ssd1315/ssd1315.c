@@ -8,18 +8,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-/* --- Pick the I2C3 register aliases --- */
-#define I2C_ISR     I2C3_ISR
-#define I2C_CR1     I2C3_CR1
-#define I2C_CR2     I2C3_CR2     /* FIX: was I2C3_CR1 by mistake */
-#define I2C_TXDR    I2C3_TXDR
-#define I2C_TIMINGR I2C3_TIMINGR
-#define I2C_ICR     I2C3_ICR
+#define I2C_OLED_ADDR 0x3C   /* common 128x64 modules */
 
-/* ===== SSD1315 high-level ===== */
-#define I2C_ADDR 0x3C   /* common 128x64 modules */
-
-#define SSD1315_PRINTF_BUFSZ 256
+static uint32_t i2c_hw_addr;
 
 static inline void tiny_delay(unsigned n)
 {
@@ -29,122 +20,33 @@ static inline void tiny_delay(unsigned n)
 /* ===== Double buffers (front shown, back drawn) ===== */
 static uint8_t fb0[SSD1315_FB_SIZE];
 static uint8_t fb1[SSD1315_FB_SIZE];
+
 static uint8_t *front = fb0;
 static uint8_t *back  = fb1;
-
-/* --- PINS (I2C3 on PA8=SCL, PC9=SDA) --- */
-static void i2c3_init_pins_bus(void)
-{
-    *RCC_AHB4ENR  |= (1u << GPIOAEN) | (1u << GPIOCEN);
-
-#define I2C3EN 23
-    *RCC_APB1LENR |= (1u << I2C3EN);    /* enable I2C3 peripheral clock */
-
-    /* PA8 → AF4, open-drain, pull-up */
-    *GPIOA_MODER   &= ~(0x3u << (MODER8));
-    *GPIOA_MODER   |=  (0x2u << (MODER8));  /* AF */
-    *GPIOA_OTYPER  |=  (0x1u << (OT8));     /* open-drain */
-    *GPIOA_PUPDR   &= ~(0x3u << (PUPDR8));
-    *GPIOA_PUPDR   |=  (0x1u << (PUPDR8));  /* pull-up */
-    *GPIOA_AFRH    &= ~(0xFu << (AFR8));
-    *GPIOA_AFRH    |=  (0x4u << (AFR8));    /* AF4 I2C3_SCL */
-    /* PC9 → AF4, open-drain, pull-up */
-    *GPIOC_MODER   &= ~(0x3u << (MODER9));
-    *GPIOC_MODER   |=  (0x2u << (MODER9));  /* AF */
-    *GPIOC_OTYPER  |=  (0x1u << (OT9));     /* open-drain */
-    *GPIOC_PUPDR   &= ~(0x3u << (PUPDR9));
-    *GPIOC_PUPDR   |=  (0x1u << (PUPDR9));  /* pull-up */
-    *GPIOC_AFRH    &= ~(0xFu << (AFR9));
-    *GPIOC_AFRH    |=  (0x4u << (AFR9));    /* AF4 I2C3_SDA */
-
-    /* Disable, program TIMINGR, enable */
-    *I2C_CR1 = 0;
-    
-    /* pick the one that works best for you */
-//  *I2C_TIMINGR = 0x00C0216C; /* ca 626kHz */
-//  *I2C_TIMINGR = 0x00C0224C; /* ca 749kHz */
-//  *I2C_TIMINGR = 0x00C01B3D; /* ca 930kHz */
-//  *I2C_TIMINGR = 0x00C00A19; /* ca 1.58MHz */
-//  *I2C_TIMINGR = 0x00C0050C; /* ca 2MHz */
-//  *I2C_TIMINGR = 0x00C00407; /* ca 3MHz */
-    *I2C_TIMINGR = 0x00700404; /* ca 3.33MHz max stable I could achieve */
-
-#define ANFOFF 12 /* analog filter 0:on 1:off, default:0, for reaching
-                     higher frequencies */
-#define PE 0
-    *I2C_CR1 = (1<<ANFOFF)|(1<<PE);                          /* PE=1 */
-}
-
-static void i2c3_start_write(uint8_t addr, uint16_t nbytes)
-{
-    /* CR2: SADD(7-bit<<1), RD_WRN=0, NBYTES, START=1, AUTOEND=0 */
-    unsigned cr2 = ((unsigned)(addr) << 1) | ((unsigned)nbytes << 16) | (1u << 13);
-    *I2C_CR2 = cr2;
-}
-
-static void i2c3_wait_txis(void) { while(((*I2C_ISR) & (1u<<1)) == 0){} } /* TXIS */
-static void i2c3_wait_tc(void)   { while(((*I2C_ISR) & (1u<<6)) == 0){} } /* TC   */
-static void i2c3_stop(void)      { *I2C_CR2 |= (1u<<14); }                /* STOP */
-
-/* Write N bytes in a single write transfer (blocking) */
-static void i2c3_write_bytes(uint8_t addr, const uint8_t *data, uint16_t n)
-{
-    if (n == 0) return;
-    i2c3_start_write(addr, n);
-    for (uint16_t i=0; i<n; i++) {
-        i2c3_wait_txis();
-        *I2C_TXDR = data[i];
-    }
-    i2c3_wait_tc();
-    i2c3_stop();
-}
-
-#if 0
-#define AUTOEND 25
-#define START 13
-#define TXIS 1
-#define STOPF 5
-#define STOPCF 5
-static void i2c3_write_bytes(uint8_t address, const uint8_t *data, uint16_t data_length)
-{
-    *I2C_CR2 =
-          (address << 1)
-        | (data_length << 16)
-        | (1 << AUTOEND)  /* auto end */
-        | (1 << START); /* start generation */
-
-    for(int i=0; i<data_length; i++){
-        while(!(*I2C_ISR & (1<<TXIS)));
-        *I2C_TXDR = data[i];
-
-    }
-
-    /* wait for STOPF or BUSY */
-    while(!(*I2C_ISR & (1 << STOPF)));
-    *I2C_ICR |= (1 << STOPCF);
-}
-#endif
 
 /* ---- COMMAND (control byte 0x00) ---- */
 static inline void ssd1315_cmd(uint8_t c)
 {
     uint8_t buf[2] = { 0x00, c }; /* 0x00 = command stream */
-    i2c3_write_bytes(I2C_ADDR, buf, 2);
-} /* <<< FIX: close the function properly */
+    i2c_write_bytes(i2c_hw_addr, I2C_OLED_ADDR, buf, 2);
+}
 
 /* ---- DATA (control byte 0x40) ---- */
 static inline void ssd1315_data_bytes(const uint8_t *p, uint16_t n)
 {
-    /* Send in small chunks: [0x40, payload...] */
+
+/* 32B is safe, but a bit slower, 254 largest possible */
+#define CHUNK 254
     while (n) {
-        uint16_t chunk = (n > 32) ? 32 : n; /* 32B is safe; 16B also fine */
-        uint8_t buf[1+32];
+        uint16_t chunk = (n > CHUNK) ? CHUNK: n;
+        uint8_t buf[1+CHUNK];
         buf[0] = 0x40;
         for (uint16_t i=0; i<chunk; i++) buf[1+i] = p[i];
-        i2c3_write_bytes(I2C_ADDR, buf, (uint16_t)(1+chunk));
+        i2c_write_bytes(i2c_hw_addr, I2C_OLED_ADDR, buf, (uint16_t)(1+chunk));
         p += chunk;
         n -= chunk;
     }
+
 }
 
 static void ssd1315_set_addr_window(uint8_t x0, uint8_t x1, uint8_t page0, uint8_t page1)
@@ -153,9 +55,9 @@ static void ssd1315_set_addr_window(uint8_t x0, uint8_t x1, uint8_t page0, uint8
     ssd1315_cmd(0x22); ssd1315_cmd(page0); ssd1315_cmd(page1); /* Page addr   */
 }
 
-bool init_ssd1315(void)
+bool init_ssd1315(uint32_t i2c_hw_addr_init)
 {
-    i2c3_init_pins_bus();
+    i2c_hw_addr = i2c_hw_addr_init;
 
     delay_ms(200);
 
@@ -194,8 +96,27 @@ bool init_ssd1315(void)
     return true;
 }
 
-void ssd1315_set_contrast(uint8_t x) { ssd1315_cmd(0x81); ssd1315_cmd(x); }
-void ssd1315_power(bool on)          { ssd1315_cmd(on ? 0xAF : 0xAE); }
+/* max 63 */
+void ssd1315_vshift(uint8_t pixels)
+{
+    ssd1315_cmd(0x40 | (pixels & 0x3F));
+}
+
+void ssd1315_rotate_180(void)
+{
+    ssd1315_cmd(0xA0); // SEG remap (flip horizontally)
+    ssd1315_cmd(0xC0); // COM scan direction (flip vertically)
+}
+
+void ssd1315_set_contrast(uint8_t x)
+{
+    ssd1315_cmd(0x81); ssd1315_cmd(x);
+}
+
+void ssd1315_power(bool on)
+{
+    ssd1315_cmd(on ? 0xAF : 0xAE);
+}
 
 void ssd1315_clear_back(void)
 {
@@ -218,8 +139,10 @@ void ssd1315_swap(void)
 void ssd1315_putpix(int x, int y, int color)
 {
     if ((unsigned)x >= SSD1315_W || (unsigned)y >= SSD1315_H) return;
+
     uint32_t idx = (uint32_t)(y >> 3) * (uint32_t)SSD1315_W + (uint32_t)x;
     uint8_t  msk = (uint8_t)(1u << (y & 7));
+
     if (color) back[idx] |=  msk;
     else       back[idx] &= ~msk;
 }
@@ -241,5 +164,14 @@ void ssd1315_line(int x0, int y0, int x1, int y1, int color)
     }
 }
 
+void ssd1315_blinking_mode(uint8_t fading_mode, uint8_t time_interval){
+    uint8_t setting = 0;
+    ssd1315_cmd(0x23);
+    setting |= ((fading_mode & 0x3)<<4)  |
+               ((time_interval & 0xf)<<0);
+    ssd1315_cmd(setting);
+}
+
+uint8_t *ssd1315_frontbuf(void) { return front; }
 uint8_t *ssd1315_backbuf(void) { return back; }
 

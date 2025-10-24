@@ -1,7 +1,9 @@
 
+#include "i2c.h"
 #include "init.h"
+#include "memory.h"
 #include "ssd1315.h"
-#include "usart1.h"
+#include "serial.h"
 #include "printf.h"
 #include <math.h>
 #include <stdint.h>
@@ -91,8 +93,10 @@ static void render_julia(float t){
 
 int main(void){
     fpu_enable();
-    init_clock();
-    init_ssd1315();
+    clock_info_t ci;
+    ci = init_clock();
+    init_i2c3_pa8_pc9(&ci);
+    init_ssd1315(I2C3);
     ssd1315_set_contrast(1);
 
     float x=0.0f;

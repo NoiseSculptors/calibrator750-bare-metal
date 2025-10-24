@@ -2,8 +2,8 @@
 cmake_minimum_required(VERSION 3.19)
 
 add_firmware(
-  NAME clock_report
-  SRCS clock_report.c
+  NAME sdmmc
+  SRCS sdmmc.c
   LIBS lib::printf
 )
 

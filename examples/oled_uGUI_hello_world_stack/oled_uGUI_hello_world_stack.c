@@ -1,5 +1,7 @@
 
+#include "i2c.h"
 #include "init.h"
+#include "memory.h"
 #include "ssd1315.h"
 #include "ssd1315_UGUI.h"
 #include "ugui.h"
@@ -11,13 +13,14 @@ static UG_GUI gui;
 
 int main(void)
 {
-    init_clock();
-    init_ssd1315();
+    clock_info_t ci = init_clock();
+    init_i2c3_pa8_pc9(&ci);
+    init_ssd1315(I2C1);
+    init_ssd1315(I2C3);
 
     ssd1315_set_contrast(1);
 
     UG_Init(&gui, UG_DrawPixel_SSD1315, SSD1315_W, SSD1315_H);
-    UG_FontSelect(&FONT_6X8);
     UG_SetForecolor(C_WHITE);
     UG_SetBackcolor(C_BLACK);
 

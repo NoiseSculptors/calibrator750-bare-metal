@@ -3,15 +3,18 @@
 #include "gpio.h"
 #include "init.h"
 #include "rcc.h"
+#include "user_io.h"
 #include <stdint.h>
 
-void sleep(unsigned int n);
+#define LOWLEVEL 0
 
 int main(void) {
 
     init_clock();
 
     /* example for blinking LEDs on D0 D1 C10 */
+
+#if LOWLEVEL == 1
 
     /* Enables GPIOC GPIOD peripheral clock */
     *RCC_AHB4ENR |= (0x1u<<GPIODEN) | (0x1u<<GPIOCEN);
@@ -31,5 +34,21 @@ int main(void) {
         *GPIOC_ODR ^= (0x1u<<ODR10);
         delay_ms(200);
     }
+
+#else
+
+    user_io_init();
+
+    while (1) {
+        user_led_toggle(0);
+        delay_ms(200);
+        user_led_toggle(1);
+        delay_ms(200);
+        user_led_toggle(2);
+        delay_ms(200);
+    }
+
+#endif
+
 }
 
