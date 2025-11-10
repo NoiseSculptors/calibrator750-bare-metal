@@ -1,6 +1,7 @@
 
 #include "gpio.h"
 #include "init.h"
+#include "user_io.h"
 #include "printf.h"
 #include "rcc.h"
 #include "timer.h"
@@ -295,7 +296,7 @@ int main(void)
 
     clock_info_t ci;
     ci = init_clock();
-    init_serial(&ci, 115200);
+    user_io_init();
 
     /* defaults */
     ui.f_tim_hz = ci.hclk_hz;

@@ -5,17 +5,13 @@
 #include "serial.h"
 #include "gpio.h"
 #include "timer.h"
-
-/******************************************************************************
-  PB10/TIM2_CH3
-  PB11/TIM2_CH4
-******************************************************************************/
+#include "user_io.h"
 
 int main(void)
 {
     clock_info_t ci;
     ci = init_clock();
-    init_serial(&ci, 115200);
+    user_io_init();
 
     printf("\e[?25l"); /* turn off cursor */
     printf("\033[2J\033[H"); /* clear screen */

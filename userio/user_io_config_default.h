@@ -8,8 +8,8 @@
 #ifndef USER_NUM_LEDS
 #  define USER_NUM_LEDS 0
 #endif
-#ifndef USER_NUM_ENCS
-#  define USER_NUM_ENCS 0
+#ifndef USER_NUM_ENCODERS
+#  define USER_NUM_ENCODERS 0
 #endif
 #ifndef USER_NUM_DISPLAYS
 #  define USER_NUM_DISPLAYS 0

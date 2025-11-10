@@ -89,8 +89,7 @@ cd calibrator750-bare-metal/
 # change RUN=flash to axi or dtcm as needed
 cmake -S . -B build \
   -G Ninja \
-  -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi-gcc.cmake \
-  -DBOARD=calibrator750 \
+  -DPART=h750 \
   -DRUN=flash \
   -DCMAKE_BUILD_TYPE=Release
 

@@ -2,6 +2,7 @@
 #include "init.h"
 #include "printf.h"
 #include "serial.h"
+#include "user_io.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -134,9 +135,8 @@ static void draw_frame(float ax, float ay){
 
 int main(void){
 
-    clock_info_t ci;
-    ci = init_clock();
-    init_serial(&ci, 115200);
+    init_clock();
+    user_io_init();
 
     printf("\033[2J\033[H"); /* clear screen */
 

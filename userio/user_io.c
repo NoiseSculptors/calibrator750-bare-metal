@@ -4,15 +4,21 @@
 #include "user_io_config.h"
 #include "gpio.h"
 #include "rcc.h"
+#include "printf.h"
+#include "serial.h"
 #include "timer.h"
 
-#define  USE_FONT_8X12
+extern clock_info_t ci;
 
 void user_io_init(void) {
+
+    init_usart1_pa10_pa9(&ci,115200);
+
 /* buttons  0:E3 1:E15 
    encoder  (B6 AF2 TIM4_CH1) (B7 AF2 TIM4_CH2)
    dip switch 0:B4 1:B3 2:D7 3:D6 4:D5 5:D4
    leds D0 D1 C10 */
+
 
     *RCC_AHB4ENR |= (0x1u<<GPIOBEN)|(0x1u<<GPIOCEN)|(0x1u<<GPIODEN)|(0x1u<<GPIOEEN);
 
@@ -100,6 +106,8 @@ void  user_led_toggle(size_t i)
 
 size_t user_dipswitch_count(void) { return USER_NUM_DIP_SWITCHES; } 
 uint32_t user_dipswitch_read(size_t idx){
+    if(idx!=0)
+        return 0;
     /* only one dip switch */
     uint32_t dip = ((*GPIOB_IDR & (1<<IDR4)) >> 4) |
                    ((*GPIOB_IDR & (1<<IDR3)) >> 2) |
@@ -113,22 +121,33 @@ uint32_t user_dipswitch_read(size_t idx){
 size_t user_display_count(void) { return USER_NUM_DISPLAYS; }
 void   user_display_flush(size_t i, const void* buf, size_t n)
 {
-    /* TODO */
+    (void)i;
+    (void)buf;
+    (void)n;
 }
 
 size_t user_serial_count(void) { return USER_NUM_SERIALS; }
-int    user_serial_write(size_t i, const void* d, size_t n)
+
+void user_serial_write_char(size_t idx, int c) {
+    if(idx==0)
+        usart1_write_char(c);
+}
+
+int user_serial_read_char(size_t idx) {
+    if(idx==0)
+        return usart1_read_char();
+    return -1;
+}
+
+/* used by lib/printf */
+void _putchar(char c)
 {
-    /* TODO */
-    return (int)n;
+    if(c=='\n')
+        usart1_write_char('\r');
+    usart1_write_char((int)c);
 }
 
-int    user_serial_read (size_t i, void* d, size_t n) {
-    /* TODO */
-    return 0;
-}
-
-size_t user_enc_count(void) { return USER_NUM_ENCS; }
+size_t user_enc_count(void) { return USER_NUM_ENCODERS; }
 
 user_enc_sample_t user_enc_read(size_t idx)
 {
@@ -139,10 +158,5 @@ user_enc_sample_t user_enc_read(size_t idx)
     last = now;
 
     return (user_enc_sample_t){ .value = now, .delta = d16, .pushed = 0 };
-}
-
-void _putchar(char c)
-{
-    (void)c;
 }
 

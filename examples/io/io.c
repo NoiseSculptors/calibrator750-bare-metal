@@ -25,7 +25,7 @@ int main(void) {
 
     user_io_init();
 
-    uint8_t x=63,y=45,r=10,white=1,leds=0;
+    uint8_t x=63,white=1;
 
     for(;;){
         uint32_t dip = user_dipswitch_read(0);
@@ -66,8 +66,6 @@ int main(void) {
         }
 
         ssd1315_printf(10,0, "%06b==0x%02x", dip, dip);
-//        ssd1315_printf(10,20, "0x%04x %+02d", enc.value, enc.delta);
-
         
         ssd1315_flush();
     }
