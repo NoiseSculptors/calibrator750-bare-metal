@@ -6,41 +6,42 @@
 #include "rcc.h"
 #include "printf.h"
 #include "serial.h"
+#include "syscall.h"
 #include "timer.h"
 
 extern clock_info_t ci;
 
-void user_io_init(void) {
+void user_btn_init(void) {
+/* buttons  0:E3 1:E15 */
+    *RCC_AHB4ENR |= (0x1u<<GPIOEEN);
+    *GPIOE_MODER &= ~((0x3u<<MODER3)|(0x3u<<MODER15));
+    *GPIOE_PUPDR &= ~((0x3u<<PUPDR3)|(0x3u<<PUPDR15));
+    *GPIOE_PUPDR |= (0x1u<<PUPDR3)|(0x1u<<PUPDR15);
+}
 
-    init_usart1_pa10_pa9(&ci,115200);
-
-/* buttons  0:E3 1:E15 
-   encoder  (B6 AF2 TIM4_CH1) (B7 AF2 TIM4_CH2)
-   dip switch 0:B4 1:B3 2:D7 3:D6 4:D5 5:D4
-   leds D0 D1 C10 */
-
-
-    *RCC_AHB4ENR |= (0x1u<<GPIOBEN)|(0x1u<<GPIOCEN)|(0x1u<<GPIODEN)|(0x1u<<GPIOEEN);
-
-    *GPIOB_MODER &= ~((0x3u<<MODER3)|(0x3u<<MODER6)|(0x3u<<MODER7)|(0x3u<<MODER4));
-    *GPIOB_MODER |= (0b10<<MODER7)|(0b10<<MODER6);
-    *GPIOB_PUPDR &= ~((0x1u<<PUPDR3)|(0x1u<<PUPDR4));
+void user_dipswitch_init(void) {
+/* dip switch 0:B4 1:B3 2:D7 3:D6 4:D5 5:D4 */
+    *RCC_AHB4ENR |= (0x1u<<GPIOBEN)|(0x1u<<GPIODEN);
+    *GPIOB_MODER &= ~((0x3u<<MODER3)|(0x3u<<MODER4));
     *GPIOB_PUPDR |= (0x1u<<PUPDR3)|(0x1u<<PUPDR4);
-
+    *GPIOD_MODER &= ~((0x3u<<MODER4)|(0x3u<<MODER5)|(0x3u<<MODER6)|(0x3u<<MODER7));
+    *GPIOD_PUPDR |= (0x1u<<PUPDR4)|(0x1u<<PUPDR5)|(0x1u<<PUPDR6)|(0x1u<<PUPDR7);
+}
+void user_led_init(void) {
+/* leds D0 D1 C10 */
+    *RCC_AHB4ENR |= (0x1u<<GPIOCEN)|(0x1u<<GPIODEN);
+    *GPIOD_MODER &= ~((0x3u<<MODER0)|(0x3u<<MODER1));
+    *GPIOD_MODER |= (0x1u<<MODER0)|(0x1u<<MODER1);
     *GPIOC_MODER &= ~(0x3u<<MODER10);
     *GPIOC_MODER |= (0x1u<<MODER10);
+}
 
-    *GPIOD_MODER &= ~((0x3u<<MODER0)|(0x3u<<MODER1)|(0x3u<<MODER4)|
-                      (0x3u<<MODER5)|(0x3u<<MODER6)|(0x3u<<MODER7));
+void user_enc_init(void) {
+/* encoder  (B6 AF2 TIM4_CH1) (B7 AF2 TIM4_CH2) */
+    *RCC_AHB4ENR |= (0x1u<<GPIOBEN);
+    *GPIOB_MODER &= ~((0x3u<<MODER7)|(0x3u<<MODER6));
+    *GPIOB_MODER |= (0x2u<<MODER7)|(0x2u<<MODER6);
 
-    *GPIOE_PUPDR &= ~((0x3u<<PUPDR3)|(0x3u<<PUPDR15));
-    *GPIOE_MODER &= ~((0x3u<<MODER3)|(0x3u<<MODER15));
-    *GPIOE_PUPDR |= (0x1u<<PUPDR3)|(0x1u<<PUPDR15);
-
-    *GPIOD_MODER|= (0x1u<<MODER0)|(0x1u<<MODER1);
-    *GPIOD_PUPDR &= ~((0x1u<<PUPDR4)|(0x1u<<PUPDR5)|(0x1u<<PUPDR6)|(0x1u<<PUPDR7));
-    *GPIOD_PUPDR |= (0x1u<<PUPDR4)|(0x1u<<PUPDR5)|(0x1u<<PUPDR6)|(0x1u<<PUPDR7);
-    
 /* rest of encoder configuration */
 #define TIM4EN 2
     *RCC_APB1LENR |= (1<<TIM4EN);
@@ -62,10 +63,10 @@ void user_io_init(void) {
 #define CC2S 8
 #define CC1S 0 
     // Configure TIM3 and TIM1 for Encoder Input Mode
-    *TIM4_SMCR |= (0b011 << SMS);  // Encoder mode 3: Counts on both TI1 and TI2
+    *TIM4_SMCR |= (0x3u << SMS);  // Encoder mode 3: Counts on both TI1 and TI2
     *TIM4_CCMR1 &= ~0xFFFF;
     // Set channels as input mapped to TI1 and TI2
-    *TIM4_CCMR1 |= (0b10 << CC2S) | (0b01 << CC1S);
+    *TIM4_CCMR1 |= (0x2u << CC2S) | (0x2u << CC1S);
     *TIM4_ARR = 0xFFFF;
 
     /* Enabe timers */
@@ -73,6 +74,17 @@ void user_io_init(void) {
     *TIM4_CR1 |= (1<<CEN);
     *TIM4_CNT = 1;
 
+}
+void user_serial_init(void) {
+    init_usart1_pa10_pa9(&ci,115200);
+}
+
+void user_io_init(void) {
+    user_btn_init();
+    user_dipswitch_init();
+    user_led_init();
+    user_enc_init();
+    user_serial_init();
 }
 
 size_t user_btn_count(void) { return USER_NUM_BTNS; }
@@ -86,7 +98,7 @@ uint8_t user_btn_read(size_t i)
 }
 
 size_t user_led_count(void) { return USER_NUM_LEDS; }
-void   user_led_write(size_t i, uint8_t on)
+void user_led_write(size_t i, uint8_t on)
 {
     switch(i){
         case 0: on==1?*GPIOD_BSRR|=(1<<BS1) : (*GPIOD_BSRR|=(1<<BR1));break;
@@ -95,7 +107,7 @@ void   user_led_write(size_t i, uint8_t on)
     }
 }
 
-void  user_led_toggle(size_t i)
+void user_led_toggle(size_t i)
 {
     switch(i){
         case 0: *GPIOD_ODR ^= (0x1u<<ODR1);break;
@@ -119,7 +131,7 @@ uint32_t user_dipswitch_read(size_t idx){
 }
 
 size_t user_display_count(void) { return USER_NUM_DISPLAYS; }
-void   user_display_flush(size_t i, const void* buf, size_t n)
+void user_display_flush(size_t i, const void* buf, size_t n)
 {
     (void)i;
     (void)buf;
@@ -145,6 +157,18 @@ void _putchar(char c)
     if(c=='\n')
         usart1_write_char('\r');
     usart1_write_char((int)c);
+}
+
+/* used by newlib (like, #include <stdio.h>) */
+int _write(int fd, const void* buf, size_t len){
+    (void)fd;
+    const char* p = (const char*)buf;
+    for(size_t i=0;i<len;i++) {
+        if((int)p[i]=='\n')
+            usart1_write_char('\r');
+        usart1_write_char((int)p[i]);
+    }
+    return (int)len;
 }
 
 size_t user_enc_count(void) { return USER_NUM_ENCODERS; }

@@ -136,7 +136,7 @@ static void draw_frame(float ax, float ay){
 int main(void){
 
     init_clock();
-    user_io_init();
+    user_serial_init();
 
     printf("\033[2J\033[H"); /* clear screen */
 

@@ -296,7 +296,7 @@ int main(void)
 
     clock_info_t ci;
     ci = init_clock();
-    user_io_init();
+    user_serial_init();
 
     /* defaults */
     ui.f_tim_hz = ci.hclk_hz;

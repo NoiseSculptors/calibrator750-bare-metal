@@ -12,10 +12,9 @@ int main(void) {
 
     init_clock();
 
-    /* example for blinking LEDs on D0 D1 C10 */
-
 #if LOWLEVEL == 1
 
+    /* example for blinking LEDs on D0 D1 C10 */
     /* Enables GPIOC GPIOD peripheral clock */
     *RCC_AHB4ENR |= (0x1u<<GPIODEN) | (0x1u<<GPIOCEN);
 
@@ -37,7 +36,8 @@ int main(void) {
 
 #else
 
-    user_io_init();
+    /* example for blinking LEDs on D0 D1 C10 */
+    user_led_init();
 
     while (1) {
         user_led_toggle(0);

@@ -17,6 +17,13 @@ extern "C" {
 
 /* ---- Lifecycle ---- */
 void   user_io_init(void);
+void   user_btn_init(void);
+void   user_dipswitch_init(void);
+void   user_led_init(void);
+void   user_enc_init(void);
+void   user_display_init(void);
+void   user_serial_init(void);
+
 void   user_io_poll(void);
 
 /* ---- Buttons ---- */

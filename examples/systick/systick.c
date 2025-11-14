@@ -3,6 +3,7 @@
 #include "systick.h"
 #include "printf.h"
 #include "user_io.h"
+#include "nvic.h"
 #include <stdint.h>
 
 extern clock_info_t ci;

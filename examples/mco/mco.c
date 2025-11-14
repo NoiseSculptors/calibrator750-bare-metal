@@ -39,8 +39,8 @@ static void init_mco(void)
         0010: division by 2
         0011: division by 3
         0100: division by 4
-    ...
-    1111: division by 15
+        ...
+        1111: division by 15
 
     Bits 24:22 MCO1[2:0]: Micro-controller clock output 1
 
@@ -59,14 +59,14 @@ static void init_mco(void)
 
 */
     *RCC_CFGR = 0; /* reset value */
-    *RCC_CFGR |= (0<<29)   | /* MCO2 source */
-                 (10u<<25) | /* MCO2 prescaler */
-                 (2u<<22)  | /* MCO1 source */
-                 (10u<<18) ; /* MCO1 prescaler */
+    *RCC_CFGR |= (2u<<22)  | /* MCO1 source */
+                 (10u<<18) | /* MCO1 prescaler */
+                 (0u<<29)  | /* MCO2 source */
+                 (10u<<25) ; /* MCO2 prescaler */
 
 /* 
-    MCO1: PC9 AF0
-    MCO2: PA8 AF0
+    MCO1: PA8 AF0
+    MCO2: PC9 AF0
 */
     *RCC_AHB4ENR |= (0x1u<<GPIOCEN)|(0x1u<<GPIOAEN);
 
@@ -84,7 +84,10 @@ static void init_mco(void)
 
 int main(void)
 {
-    /* 2.6MHz on PC9, 48MHz on PA8 */
+    /*
+       2.6MHz on MCO1/PA8 (HSE/10)
+       48MHz  on MCO2/PC9 (System clock/10)
+     */
     init_mco(); /* init *before* enabling external oscillators and PLLs */
     init_clock();
 }
