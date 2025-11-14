@@ -91,6 +91,8 @@ cmake -S . -B build \
   -G Ninja \
   -DPART=h750 \
   -DRUN=flash \
+  -DCMAKE_TOOLCHAIN_FILE=cmake/arm-none-eabi-gcc.cmake \
+  -DCMAKE_COLOR_DIAGNOSTICS=ON \
   -DCMAKE_BUILD_TYPE=Release
 
 cmake --build build
