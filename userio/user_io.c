@@ -20,12 +20,24 @@ void user_btn_init(void) {
 }
 
 void user_dipswitch_init(void) {
-/* dip switch 0:B4 1:B3 2:D7 3:D6 4:D5 5:D4 */
-    *RCC_AHB4ENR |= (0x1u<<GPIOBEN)|(0x1u<<GPIODEN);
+/* dip switch 0: 0:B4 1:B3 2:D7 3:D6 4:D5 5:D4
+   dip switch 1: 0:B0 1:C5 2:C4 3:A7 4:A6 5:A5 */
+    /* dipswitch 0|1 */
+    *RCC_AHB4ENR |= (0x1u<<GPIOAEN)|(0x1u<<GPIOBEN)|(0x1u<<GPIOCEN)|(0x1u<<GPIODEN);
+
+    /* dipswitch 0: */
     *GPIOB_MODER &= ~((0x3u<<MODER3)|(0x3u<<MODER4));
-    *GPIOB_PUPDR |= (0x1u<<PUPDR3)|(0x1u<<PUPDR4);
     *GPIOD_MODER &= ~((0x3u<<MODER4)|(0x3u<<MODER5)|(0x3u<<MODER6)|(0x3u<<MODER7));
+    *GPIOB_PUPDR |= (0x1u<<PUPDR3)|(0x1u<<PUPDR4);
     *GPIOD_PUPDR |= (0x1u<<PUPDR4)|(0x1u<<PUPDR5)|(0x1u<<PUPDR6)|(0x1u<<PUPDR7);
+
+    /* dipswitch 1: */
+    *GPIOA_MODER &= ~((0x3u<<MODER5)|(0x3u<<MODER6)|(0x3u<<MODER7));
+    *GPIOB_MODER &= ~((0x3u<<MODER0));
+    *GPIOC_MODER &= ~((0x3u<<MODER4)|(0x3u<<MODER5));
+    *GPIOA_PUPDR |= (0x1u<<PUPDR5)|(0x1u<<PUPDR6)|(0x1u<<PUPDR7);
+    *GPIOB_PUPDR |= (0x1u<<PUPDR0);
+    *GPIOC_PUPDR |= (0x1u<<PUPDR4)|(0x1u<<PUPDR5);
 }
 void user_led_init(void) {
 /* leds D0 D1 C10 */
@@ -118,16 +130,26 @@ void user_led_toggle(size_t i)
 
 size_t user_dipswitch_count(void) { return USER_NUM_DIP_SWITCHES; } 
 uint32_t user_dipswitch_read(size_t idx){
-    if(idx!=0)
-        return 0;
-    /* only one dip switch */
-    uint32_t dip = ((*GPIOB_IDR & (1<<IDR4)) >> 4) |
-                   ((*GPIOB_IDR & (1<<IDR3)) >> 2) |
-                   ((*GPIOD_IDR & (1<<IDR7)) >> 5) |
-                   ((*GPIOD_IDR & (1<<IDR6)) >> 3) |
-                   ((*GPIOD_IDR & (1<<IDR5)) >> 1) |
-                   ((*GPIOD_IDR & (1<<IDR4)) << 1) ;
-    return ~dip & 0x3f;
+    if(idx==0){
+        uint32_t dip = ((*GPIOB_IDR & (1<<IDR4)) >> 4) |
+                       ((*GPIOB_IDR & (1<<IDR3)) >> 2) |
+                       ((*GPIOD_IDR & (1<<IDR7)) >> 5) |
+                       ((*GPIOD_IDR & (1<<IDR6)) >> 3) |
+                       ((*GPIOD_IDR & (1<<IDR5)) >> 1) |
+                       ((*GPIOD_IDR & (1<<IDR4)) << 1) ;
+        return ~dip & 0x3f;
+    }
+    if(idx==1){
+        uint32_t dip =
+                       ((*GPIOA_IDR & (1<<IDR5))     ) |
+                       ((*GPIOA_IDR & (1<<IDR6)) >> 2) |
+                       ((*GPIOA_IDR & (1<<IDR7)) >> 4) |
+                       ((*GPIOC_IDR & (1<<IDR4)) >> 2) |
+                       ((*GPIOC_IDR & (1<<IDR5)) >> 4) |
+                       ((*GPIOB_IDR & (1<<IDR0))     ) ;
+        return ~dip & 0x3f;
+    }
+    return -1;
 }
 
 size_t user_display_count(void) { return USER_NUM_DISPLAYS; }

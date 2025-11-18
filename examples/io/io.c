@@ -18,7 +18,7 @@ int main(void) {
     init_i2c3_pa8_pc9(&ci);
     init_ssd1315(I2C3);
 
-    ssd1315_set_contrast(1);
+    ssd1315_set_contrast(1); // max:255
 
     UG_Init(&gui, UG_DrawPixel_SSD1315, SSD1315_W, SSD1315_H);
     UG_FontSelect(&FONT_8X12);
@@ -28,21 +28,22 @@ int main(void) {
     uint8_t x=63,white=1;
 
     for(;;){
-        uint32_t dip = user_dipswitch_read(0);
+        uint32_t dip0 = user_dipswitch_read(0);
+        uint32_t dip1 = user_dipswitch_read(1);
         user_enc_sample_t enc = user_enc_read(0);
 
         ssd1315_clear_back();
 
         if(user_btn_read(0)){
-            UG_FillCircle(40, 32, 10, white);
+            UG_FillCircle(40, 38, 10, white);
         } else {
-            UG_DrawCircle(40, 32, 10, white);
+            UG_DrawCircle(40, 38, 10, white);
         }
 
         if(user_btn_read(1)) {
-            UG_FillCircle(80, 32, 10, white);
+            UG_FillCircle(80, 38, 10, white);
         } else {
-            UG_DrawCircle(80, 32, 10, white);
+            UG_DrawCircle(80, 38, 10, white);
         }
 
         x+=enc.delta;
@@ -65,7 +66,8 @@ int main(void) {
             UG_DrawMesh(0,55,x,127, white);
         }
 
-        ssd1315_printf(10,0, "%06b==0x%02x", dip, dip);
+        ssd1315_printf(10,0,  "%06b==0x%02x", dip0, dip0);
+        ssd1315_printf(10,12, "%06b==0x%02x", dip1, dip1);
         
         ssd1315_flush();
     }

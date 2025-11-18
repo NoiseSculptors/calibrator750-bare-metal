@@ -2,7 +2,7 @@
 cmake_minimum_required(VERSION 3.19)
 project(app_userio C)
 
-add_library(app_userio STATIC user_io_default.c)
+add_library(app_userio STATIC serial.c user_io_default.c)
 add_library(lib::userio ALIAS app_userio)
 
 target_link_libraries(app_userio PUBLIC lib::printf)

@@ -56,6 +56,7 @@ int    user_serial_write(size_t idx, const void* data, size_t len);
 int    user_serial_read (size_t idx, void* data, size_t maxlen);
 void   user_serial_write_char(size_t idx, int c);
 int    user_serial_read_char(size_t idx);
+void   hexdump(uint32_t addr, size_t len);
 
 #ifdef __cplusplus
 }
