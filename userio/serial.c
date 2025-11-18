@@ -2,10 +2,7 @@
 #include <stdint.h>
 #include <stddef.h>
 #include "printf.h"
-
-#include <stdint.h>
-#include <stddef.h>
-#include "printf.h"
+#include "user_io.h"
 
 void hexdump(uint32_t addr, size_t len)
 {

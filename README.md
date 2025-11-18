@@ -42,7 +42,7 @@ and creative hardware designs.
 
 This repository provides:
 
-- Simple **Makefile-based build system**
+- Simple **CMake-based build system**
 - Full **startup code** and **linker scripts** for flash, AXI SRAM, and DTCM execution
 - Modular source layout (`src/`, `drivers/`, `examples/`, `include/`)
 - External lightweight libraries:
@@ -55,20 +55,19 @@ external toolchain integration or CMake needed.
 
 ---
 
-## Build Configuration
+## Build Options 
 
-Select the desired memory region in `makefile.conf`:
+Select the desired build memory region in `makefile.conf`:
 
 ```make
 # ---- Build profile selection ----
-# Choose one: flash (0x08000000) | axi (0x24000000) | dtcm (0x20000000)
-RUN = axi
+# Choose one: flash (0x08000000) | axi (0x24000000)
+-DRUN = axi
 ````
 | Profile | Memory region | Notes                            |
 | ------- | ------------- | -------------------------------- |
 | `flash` | 0x08000000    | Run from internal Flash (128K)   |
 | `axi`   | 0x24000000    | Run from AXI SRAM (fast, 518K)   |
-| `dtcm`  | 0x20000000    | Run from DTCM (very fast, 128K)  |
 ---
 
 ## Build Example
@@ -128,16 +127,16 @@ If you prefer to **run applications entirely from RAM**, flash the tiny
 For example:
 
 ```bash
-st-flash write trampoline.bin 0x08000000
+st-flash write <your_firmware>.bin 0x08000000
 ```
 
 or
 
 ```bash
-pyocd load trampoline.bin --target stm32h750xx --base 0x08000000
+pyocd load <your_firmware>.bin --target stm32h750xx --base 0x24000000
 ```
 
-The trampoline’s job is to forward reset to a RAM-resident app — by default at
+The trampoline's job is to forward reset to a RAM-resident app  by default at
 `APP_BASE = 0x24000000` (AXI SRAM on STM32H750).
 
 To be able to "flash" to 0x24000000 memory address, please add the following address region to pyocd: 
@@ -160,7 +159,13 @@ To be able to "flash" to 0x24000000 memory address, please add the following add
              is_powered_on_boot=False),
 ```
 
-After the trampoline is in place, simply load your real application into RAM:
+After the trampoline is in place, after
+
+```bash
+pyocd load trampoline_h750.bin --target stm32h750xx --base 0x8000000
+```
+
+simply load your real application into RAM:
 
 ```bash
 pyocd load <your_firmware>.bin --target stm32h750xx --base 0x24000000
@@ -171,30 +176,32 @@ pyocd load <your_firmware>.bin --target stm32h750xx --base 0x24000000
 ## Directory Layout
 
 ```
-include/        → register headers
-src/            → core modules (init, NVIC, syscall, etc.)
-drivers/        → device drivers (e.g., SSD1315 OLED)
-examples/       → standalone demo programs
-lib/            → bundled libraries (noisesculptors-core, UGUI, printf)
-ldscripts/      → linker scripts for Flash, AXI, DTCM
-startup/        → startup code and vector tables
+drivers/        -> device drivers (e.g., SSD1315 OLED)
+examples/       -> standalone demo programs
+include/        -> register headers
+ldscripts/      -> linker scripts for Flash, AXI, DTCM
+lib/            -> bundled libraries (noisesculptors-core, UGUI, printf)
+src/            -> core modules (init, NVIC, syscall, etc.)
+startup/        -> startup code and vector tables
+tools/          -> various tools, such as pll configuration .py script
+userio/         -> I/O user code
 ```
 
 ---
 
 ## Toolchain
 
-Requires `arm-none-eabi-gcc` and standard GNU make:
+Requires `arm-none-eabi-gcc` and CMake:
 
 ```bash
-sudo apt install gcc-arm-none-eabi make
+sudo apt install gcc-arm-none-eabi cmake
 ```
 
 ---
 
 ## License
 
-© 2025 Noise Sculptors with help of ChatGPT-5
+© 2025 Noise Sculptors with help of ChatGPT-5,5.1
 
 External libraries retain their respective licenses.
 
