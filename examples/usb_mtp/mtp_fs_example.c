@@ -75,8 +75,8 @@ storage_info_t storage_info = {
 // MTP FILESYSTEM
 //--------------------------------------------------------------------+
 // only allow to add 1 more object to make it simpler to manage memory
-#define FS_MAX_FILE_COUNT 3UL
-#define FS_MAX_FILENAME_LEN 16
+#define FS_MAX_FILE_COUNT 5UL
+#define FS_MAX_FILENAME_LEN 19
 
 #ifdef CFG_EXAMPLE_MTP_READONLY
   #define FS_MAX_CAPACITY_BYTES  0
@@ -128,7 +128,31 @@ static fs_file_t fs_objects[FS_MAX_FILE_COUNT] = {
     .association_type = MTP_ASSOCIATION_UNDEFINED,
     .size = LOGO_LEN,
     .data = (uint8_t*) (uintptr_t) logo_bin
-  }
+  },
+  {
+    .name = { 'q', 's', 'p', 'i', '_', 'f', 'l', 'a', 's', 'h', '.', 'b', 'i', 'n', 0 }, // "qspi_flash.bin"
+    .object_format = MTP_OBJ_FORMAT_UNDEFINED,
+    .protection_status = MTP_PROTECTION_STATUS_READ_ONLY,
+    .image_pix_width = 0,
+    .image_pix_height = 0,
+    .image_bit_depth = 0,
+    .parent = 0,
+    .association_type = MTP_ASSOCIATION_UNDEFINED,
+    .size = 16 * 1024 * 1024UL,
+    .data = (uint8_t*) (uintptr_t) 0x90000000, 
+  },
+  {
+    .name = { 'i', 'n', 't', 'e', 'r', 'n', 'a', 'l', '_', 'f', 'l', 'a', 's', 'h', '.', 'b', 'i', 'n', 0 }, // "internal_flash.bin"
+    .object_format = MTP_OBJ_FORMAT_UNDEFINED,
+    .protection_status = MTP_PROTECTION_STATUS_READ_ONLY,
+    .image_pix_width = 0,
+    .image_pix_height = 0,
+    .image_bit_depth = 0,
+    .parent = 0,
+    .association_type = MTP_ASSOCIATION_UNDEFINED,
+    .size = 128 * 1024UL,
+    .data = (uint8_t*) (uintptr_t) 0x8000000, 
+  },
 };
 
 enum {

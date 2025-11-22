@@ -7,6 +7,7 @@
 #include "init.h"
 #include "printf.h"
 #include "pwr.h"
+#include "qspi.h"
 #include "rcc.h"
 #include "systick.h"
 #include "tusb.h"
@@ -16,10 +17,14 @@
 #include <stdint.h>
 #include <stddef.h>
 
+#define QSPI_CLK_MULTIPLIER 2U /* multiplier 2, qspi clk == 80MHz */
+
 int main(void)
 {
     init_clock();
     user_serial_init();
+    init_qspi(QSPI_CLK_MULTIPLIER);
+    qspi_memory_map_mode();
 
     main_tinyusb();
 
