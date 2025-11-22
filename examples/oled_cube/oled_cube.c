@@ -80,7 +80,7 @@ int main(void){
 
     init_i2c3_pa8_pc9(&ci);
     init_ssd1315(I2C3);
-    init_dwt(&ci);
+    init_dwt();
 
     ssd1315_set_contrast(10);
     UG_Init(&gui, UG_DrawPixel_SSD1315, SSD1315_W, SSD1315_H);
