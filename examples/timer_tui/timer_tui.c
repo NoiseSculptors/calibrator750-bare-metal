@@ -10,6 +10,8 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+extern clock_info_t ci;
+
 /* Output on PB13 */
 
 static int uart_getch_nb(void)
@@ -294,8 +296,7 @@ static void bump(int dir, bool bigstep)
 int main(void)
 {
 
-    clock_info_t ci;
-    ci = init_clock();
+    init_clock();
     user_serial_init();
 
     /* defaults */

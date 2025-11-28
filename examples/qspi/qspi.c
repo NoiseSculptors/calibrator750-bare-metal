@@ -7,40 +7,71 @@
 #include "serial.h"
 #include "user_io.h"
 
-/* do not use 0 as QSPI_CLK_MULTIPLIER as it hangs the chip, possible described
-here, possibly hangs when using other clock soruces than QSPISEL:0
- https://www.st.com/resource/en/errata_sheet/es0445-stm32h745xig-stm32h755xi-stm32h747xig-stm32h757xi-device-errata-stmicroelectronics.pdf
- */
-#define QSPI_CLK_MULTIPLIER 2U /* 2: Fquadspi_ker_ck/3; 240/3= 80MHz */
-
-#if defined(QSPI_PRESCALER) && (QSPI_PRESCALER == 0)
-#error "QSPI prescaler 0 is forbidden due to STM32H7 QUADSPI errata"
-#endif
-
-#define QSPI_BASE           0x90000000UL
-#define QSPI_SIZE           (16 * 1024 * 1024UL)
+#define QSPI_BASE    0x90000000UL
+#define QSPI_SIZE    (16 * 1024 * 1024UL)
 
 extern clock_info_t ci;
 
 int main(void)
 {
     init_clock();
-    init_dwt();
     user_serial_init();
+    init_dwt();
 
-    /* 80MHz qspi */
-    init_qspi(QSPI_CLK_MULTIPLIER);
+
+
+    /*
+    init_qspi_80MHz();
+    */
 
     /* or */
 
-    /* 104MHz qspi (max allowed for the flash chip), PLL2 as clock source */
-//  init_qspi_pll2_clock_source_qspi_104MHz();
+    /*
+    104MHz qspi (max allowed for the flash chip), PLL2 as clock source
+    thus consuming more energy
+     */
+
+    init_qspi_pll2_104MHz();
+
+
+
+    /*
+      Read/Write test
+    */
+    printf("\033[2J\033[H"); /* clear screen */
+
+    int32_t size = 0x100;
+    uint8_t buf8[size*4];
+
+    uint32_t offset = (4*1024*123); /* you can adjust to test different offsets
+                                   (from the beginning of the qspi chip) */
+
+    for(int i=0;i<=size*4;i+=1)
+        buf8[i] = i;
+
+    printf("Data to write\n");
+    hexdump((uint32_t)(&buf8),size);
+    printf("\n");
+
+    qspi_write_flash_qpi(offset, (uint32_t*)buf8, size);
+
+    qspi_read(offset, (uint32_t*)buf8, size);
 
     qspi_memory_map_mode();
 
-    printf("\033[2J\033[H"); /* clear screen */
-    hexdump(QSPI_BASE,0x100);
+    printf("Reading in memory mapped mode\n");
+    hexdump(QSPI_BASE + offset, size);
+    printf("\n");
 
+    printf("Reading with qsp_read function\n");
+    hexdump((uint32_t)(&buf8),size);
+    printf("\n");
+
+
+
+    /*
+       Flash speed test
+    */
     volatile uint32_t *p32 = (volatile uint32_t *)QSPI_BASE;
     uint32_t words = QSPI_SIZE / 4;
     uint32_t sum32 = 0;
