@@ -174,4 +174,6 @@ void ssd1315_blinking_mode(uint8_t fading_mode, uint8_t time_interval){
 
 uint8_t *ssd1315_frontbuf(void) { return front; }
 uint8_t *ssd1315_backbuf(void) { return back; }
+void *ssd1315_frontbuf_set(uint8_t *buf) { front = buf; }
+void *ssd1315_backbuf_set(uint8_t *buf) { back = buf; }
 

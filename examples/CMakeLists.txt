@@ -3,6 +3,7 @@ cmake_minimum_required(VERSION 3.19)
 
 add_subdirectory(blink)
 add_subdirectory(clock_report)
+add_subdirectory(dma_i2c_oled)
 add_subdirectory(game_snake)
 add_subdirectory(io)
 add_subdirectory(julia)

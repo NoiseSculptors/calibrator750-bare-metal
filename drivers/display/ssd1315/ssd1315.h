@@ -24,9 +24,11 @@ void ssd1315_rotate_180(void);
    interval       0:8 frames .. 0xf:128 frames */
 void ssd1315_blinking_mode(uint8_t fading_mode, uint8_t time_interval);
 
-/* Get raw buffers (if you want to custom-fill) */
+/* Get/set raw buffers */
 uint8_t *ssd1315_frontbuf(void);
 uint8_t *ssd1315_backbuf(void);
+void *ssd1315_frontbuf_set(uint8_t *buf);
+void *ssd1315_backbuf_set(uint8_t *buf);
 
 #endif
 

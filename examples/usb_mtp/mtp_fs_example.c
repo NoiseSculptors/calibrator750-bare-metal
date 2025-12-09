@@ -1,32 +1,9 @@
 /*
- * The MIT License (MIT)
- *
- * Copyright (c) 2025 Ennebi Elettronica (https://ennebielettronica.com)
- *
- * Permission is hereby granted, free of charge, to any person obtaining a copy
- * of this software and associated documentation files (the "Software"), to deal
- * in the Software without restriction, including without limitation the rights
- * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
- * copies of the Software, and to permit persons to whom the Software is
- * furnished to do so, subject to the following conditions:
- *
- * The above copyright notice and this permission notice shall be included in
- * all copies or substantial portions of the Software.
- *
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
- * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
- * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
- * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
- * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
- * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
- * THE SOFTWARE.
- *
+   Based upon tinuysb usb mtp example
  */
 
 #include "bsp/board_api.h"
 #include "tusb.h"
-
-#include "tinyusb_logo_png.h"
 
 //--------------------------------------------------------------------+
 // Dataset
@@ -75,7 +52,7 @@ storage_info_t storage_info = {
 // MTP FILESYSTEM
 //--------------------------------------------------------------------+
 // only allow to add 1 more object to make it simpler to manage memory
-#define FS_MAX_FILE_COUNT 5UL
+#define FS_MAX_FILE_COUNT 4UL
 #define FS_MAX_FILENAME_LEN 19
 
 #ifdef CFG_EXAMPLE_MTP_READONLY
@@ -116,18 +93,6 @@ static fs_file_t fs_objects[FS_MAX_FILE_COUNT] = {
     .association_type = MTP_ASSOCIATION_UNDEFINED,
     .size = sizeof(README_TXT_CONTENT)-1,
     .data = (uint8_t*) (uintptr_t) README_TXT_CONTENT,
-  },
-  {
-    .name = { 't', 'i', 'n', 'y', 'u', 's', 'b', '.', 'p', 'n', 'g', 0 }, // "tinyusb.png"
-    .object_format = MTP_OBJ_FORMAT_PNG,
-    .protection_status = MTP_PROTECTION_STATUS_READ_ONLY,
-    .image_pix_width = 128,
-    .image_pix_height = 64,
-    .image_bit_depth = 32,
-    .parent = 0,
-    .association_type = MTP_ASSOCIATION_UNDEFINED,
-    .size = LOGO_LEN,
-    .data = (uint8_t*) (uintptr_t) logo_bin
   },
   {
     .name = { 'q', 's', 'p', 'i', '_', 'f', 'l', 'a', 's', 'h', '.', 'b', 'i', 'n', 0 }, // "qspi_flash.bin"
@@ -421,7 +386,7 @@ static int32_t fs_get_storage_info(tud_mtp_cb_data_t* cb_data) {
   const uint32_t storage_id = command->params[0];
   TU_VERIFY(SUPPORTED_STORAGE_ID == storage_id, -1);
   // update storage info with current free space
-  storage_info.max_capacity_in_bytes = sizeof(README_TXT_CONTENT) + LOGO_LEN + FS_MAX_CAPACITY_BYTES;
+  storage_info.max_capacity_in_bytes = sizeof(README_TXT_CONTENT) + FS_MAX_CAPACITY_BYTES;
   storage_info.free_space_in_objects = FS_MAX_FILE_COUNT - fs_get_file_count();
   storage_info.free_space_in_bytes = storage_info.free_space_in_objects ? FS_MAX_CAPACITY_BYTES : 0;
   (void) mtp_container_add_raw(io_container, &storage_info, sizeof(storage_info));
