@@ -347,7 +347,7 @@ def draw(stdscr, cfg, sel):
     if comp:
         lines = [
             ("fin", comp['fin']),
-            ("N_eff", comp['n_eff']),
+            ("N_eff", comp['n_eff'] * 1e6),
             ("VCO", comp['vco']),
             ("PLL1P (SYSCLK)", comp['p']),
             ("PLL1Q", comp['q']),
