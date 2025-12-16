@@ -108,28 +108,23 @@ class Cfg:
             # D3: APB4 derived from D3 HCLK (== hclk)
             apb4 = hclk / self.d3ppre
 
-            # Timers only on APB1/APB2; double when prescaler > 1
-            tim1 = apb1 * (2 if self.d2ppre1 > 1 else 1)
-            tim2 = apb2 * (2 if self.d2ppre2 > 1 else 1)
-
             return {
                 'fin': fin, 'n_eff': n_eff, 'vco': vco,
                 'p': p, 'q': q, 'r': r,
                 'sys_ck': sys_ck, 'cpu': cpu, 'hclk': hclk,
                 'apb1': apb1, 'apb2': apb2, 'apb3': apb3, 'apb4': apb4,
-                'tim_apb1': tim1, 'tim_apb2': tim2,
             }
         except Exception:
             return None
 
 # ---- Fields config (label, attr, step, allowed, is_int, special) ----
-P_VALID = [1] + [v for v in range(2, 129) if v % 2 == 0]  # 1,2,4,6,...,128
+P_VALID = list(range(1, 129))
 FIELDS = [
     ("HSE [Hz]",  "HSE",      1000,   (1_000_000, 64_000_000), False, None),
     ("M",         "M",        1,      (1, 63),                  True,  None),
     ("N",         "N",        1,      (4, 512),                 True,  None),
     ("FRACN",     "FRACN",    1,      (0, 8191),                True,  None),
-    ("P (1 or even)", "P",    1,      P_VALID,                  True,  'set'),
+    ("P",         "P",        1,      P_VALID,                  True,  'set'),
     ("Q",         "Q",        1,      (1, 128),                 True,  None),
     ("R",         "R",        1,      (1, 128),                 True,  None),
     ("d1cpre",    "d1cpre",   1,      VALID_D1CPRE,             True,  'set'),
@@ -228,7 +223,7 @@ def draw(stdscr, cfg, sel):
     if comp:
         lines = [
             ("fin", comp['fin']),
-            ("N_eff", comp['n_eff']),
+            ("N_eff", comp['n_eff'] * 1e6),
             ("VCO", comp['vco']),
             ("PLL1P (SYSCLK)", comp['p']),
             ("PLL1Q", comp['q']),
@@ -239,8 +234,6 @@ def draw(stdscr, cfg, sel):
             ("APB2", comp['apb2']),
             ("APB3", comp['apb3']),
             ("APB4", comp['apb4']),
-            ("TIM on APB1", comp['tim_apb1']),
-            ("TIM on APB2", comp['tim_apb2']),
         ]
         stdscr.addstr(row2, 2, "Computed clocks:", curses.A_BOLD)
         for j,(k,v) in enumerate(lines):
@@ -326,10 +319,6 @@ def adjust(cfg, field_idx, delta, mult10=False):
         new = vals[i]
     setattr(cfg, attr, int(new) if is_int else new)
 
-def save_header(cfg):
-    with open("pll_config.h", "w") as f:
-        f.write(cfg.as_header())
-
 def draw(stdscr, cfg, sel):
     stdscr.clear()
     h, w = stdscr.getmaxyx()
@@ -369,8 +358,6 @@ def draw(stdscr, cfg, sel):
             ("APB2", comp['apb2']),
             ("APB3", comp['apb3']),
             ("APB4", comp['apb4']),
-            ("TIM on APB1", comp['tim_apb1']),
-            ("TIM on APB2", comp['tim_apb2']),
         ]
         stdscr.addstr(row2, 2, "Computed clocks:", curses.A_BOLD)
         for j,(k,v) in enumerate(lines):
@@ -419,8 +406,6 @@ def main(stdscr):
             edit_value(stdscr, cfg, sel)
         elif ch in (ord('r'),):
             cfg.reset()
-        elif ch in (ord('s'),):
-            save_header(cfg)
         elif ch in (ord('F'),):
             cfg.family = FAMILY_H735 if cfg.family == FAMILY_H750 else FAMILY_H750
         draw(stdscr, cfg, sel)
