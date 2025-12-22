@@ -22,10 +22,7 @@
 int main(void)
 {
     init_clock();
-    user_serial_init();
-    init_qspi(QSPI_CLK_MULTIPLIER);
-    qspi_memory_map_mode();
-
+    init_qspi_pll2_104MHz();
     main_tinyusb();
 
     /* never reached */

@@ -27,10 +27,10 @@ find_program(SIZE    NAMES arm-none-eabi-size    REQUIRED)
 add_subdirectory(lib/noisesculptors-core)
 
 # Optional libs/drivers as OBJECTs (kept lean; they should link PUBLIC to core)
-add_subdirectory(userio)
-add_subdirectory(lib)
 add_subdirectory(drivers/display/ssd1315)
 add_subdirectory(drivers/display/ssd1315_UGUI)
+add_subdirectory(lib)
+add_subdirectory(userio)
 
 # ---- Helper to create firmware ELF+BIN (linking object libs) ---------------
 function(add_firmware)
@@ -74,6 +74,8 @@ function(add_firmware)
     -nostartfiles
     # -Wl,--print-memory-usage
     -Wl,--defsym=_end=__bss_end__
+    -specs=nano.specs
+    -specs=nosys.specs
   )
 
   # Post-build .bin and size

@@ -1,4 +1,5 @@
 
+#include "delay.h"
 #include "gpio.h"
 #include "init.h"
 #include "nvic.h"
@@ -8,6 +9,7 @@
 #include "systick.h"
 #include "usb.h"
 #include "user_io.h"
+#include <stdio.h>
 
 /* tinyusb */
 #include "tusb.h"
@@ -20,14 +22,15 @@ extern clock_info_t ci;
 
 void board_init(void){
 
+  init_clock();
+  user_io_init(); /* define your own setup in userio/user_io.c */
+  init_systick_1ms();
 
   milliseconds = 0;
   SystemCoreClock = ci.hclk_hz;
 
-  user_led_init();
-
   irq_enable(IRQ_OTG_FS);
-  irq_enable(IRQ_OTG_HS);
+  // irq_enable(IRQ_OTG_HS);
 
   // ------ GPIO clocks: enable GPIOA (USB DM/DP) -----------------------------
   *RCC_AHB4ENR |= (1u << GPIOAEN);
@@ -51,36 +54,43 @@ void board_init(void){
   *GPIOA_AFRH &= ~((0xFu << AFR11) | (0xFu << AFR12));
   *GPIOA_AFRH |=  (OTG2_FS << AFR11) | (OTG2_FS << AFR12);
 
+  *RCC_D2CCIP2R &= ~(1u << 20); // USBSEL *0:none*, 1:PLL1Q, 2:PLL3Q, 3:HSI48
+
+
   // ------ Enable USB2 OTG FS peripheral clock -------------------------------
   /* pll1_q_clk@48MHz used as clock source */
   *RCC_D2CCIP2R |= (1u << 20); // USBSEL *1:PLL1Q*, 2:PLL3Q, 3:HSI48
   *RCC_AHB1ENR |= (1u << 27); // 27:USB2OTGHSEN|28:USB2OTGHSULPIEN (not needed)
+  // not needed:
+  // *USB2_OTG_FS_OTG_GRSTCTL |= (1<<1); /* CSRST: Core soft reset */
   *USB2_OTG_FS_OTG_GCCFG |= (1u << 16); // PWRDWN (1:USB FS PHY enabled)
   // *USB2_OTG_FS_OTG_GCCFG &= ~(1u << 21); // VBDEN turn off VBUS detection
                                             // (default after reset)
 
-  // Included in tinyusb code, but it seems not needed
-  // 7:BVALOVAL: B-peripheral session valid override value.
-  // 6:BVALOEN:  B-peripheral session valid override enable.
-  //*USB2_OTG_FS_OTG_GOTGCTL |= (1<<7)|(1<<6);
-
   *PWR_CR3 |= (1<<24); // USB33DEN  USB33 voltage level detector enabled.
   while(!(*PWR_CR3 & (1<<26))){} // USB33RDY wait until USB33 detector ready
 
-  // ------ SysTick @ 1 kHz ---------------------------------------------------
-  uint32_t systick_clk = ci.hclk_hz / 8u;
-  uint32_t reload = (systick_clk / 1000u) - 1u; // 1kHz tick
+#if 0 /* TODO: host mode */
+#if CFG_TUH_ENABLED == 1
+  printf("---------------------------------------------\n"
+         "tinyusb_calibrator750.c / selecting host mode\n");
+  *USB2_OTG_FS_OTG_HCFG    |= (1<<0); /* FSLSPCS[1:0]: FS/LS PHY clock select
+When the core is in FS host mode */
+  *USB2_OTG_FS_OTG_HPRT    |= (1<<6); /* port reset */
+  delay_ms(10);
+  *USB2_OTG_FS_OTG_HPRT    &= ~(1<<6); /* release port reset */
+  *USB2_OTG_FS_OTG_HCCHAR0 |= (64<<0); /*  Maximum packet size */
+  *USB2_OTG_FS_OTG_GUSBCFG |= (1<<29); /* force host mode */
 
-  *SYST_RVR = reload & 0x00FFFFFFu; // clamp to 24-bit
-  *SYST_CVR = 0; // clear current
-  *SYST_CSR = (1<<SYST_CSR_CLKSOURCE) |
-              (1<<SYST_CSR_TICKINT) |
-              (1<<SYST_CSR_ENABLE);
+#endif
+#endif
+
 }
 
 void SysTick_Handler(void){
     milliseconds++;
-    user_led_toggle(1); // 1kHz
+    if(milliseconds%500==0)
+        user_led_toggle(1);
 }
 
 void IRQ_OTG_FS_Handler(void){
@@ -89,6 +99,10 @@ void IRQ_OTG_FS_Handler(void){
 
 void board_init_after_tusb(void){
     /* nothing needed */
+}
+
+uint32_t tusb_time_millis_api(void){
+    return milliseconds;
 }
 
 uint32_t board_millis(void){
@@ -146,5 +160,34 @@ size_t board_usb_get_serial(uint16_t desc_str1[], size_t max_chars){
         if (out < max_chars) desc_str1[out++] = (uint16_t)lo;
     }
     return out; // number of UTF-16 code units written
+}
+
+int board_getchar(void)
+{
+    return 0;
+}
+
+uint32_t board_button_read(void)
+{
+    return (uint32_t)user_btn_read(0);
+}
+
+void board_reset_to_bootloader(void)
+{
+    /* not implemented */
+}
+
+void board_delay(uint32_t ms)
+{
+    while(ms){
+#if CFG_TUD_ENABLED
+        tud_task();
+#endif
+#if CFG_TUH_ENABLED
+        tuh_task();
+#endif
+        delay_ms(1);
+        ms--;
+    }
 }
 

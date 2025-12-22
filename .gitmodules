@@ -10,3 +10,9 @@
 [submodule "lib/tinyusb"]
 	path = lib/tinyusb
 	url = https://github.com/hathach/tinyusb
+[submodule "lib/lwext4"]
+	path = lib/lwext4
+	url = https://github.com/gkostka/lwext4
+[submodule "lib/lwip"]
+	path = lib/lwip
+	url = git://git.git.savannah.gnu.org/lwip.git
