@@ -7,6 +7,10 @@ add_subdirectory(dma_i2c_oled)
 add_subdirectory(game_snake)
 add_subdirectory(io)
 add_subdirectory(julia)
+
+# TODO
+#add_subdirectory(lcd)
+
 add_subdirectory(mco)
 add_subdirectory(oled_cube)
 add_subdirectory(oled_uGUI_hello_world)
@@ -50,5 +54,5 @@ add_subdirectory(usb/host/bare_api)
 #add_subdirectory(usb/host/device_info)
 #add_subdirectory(usb/host/hid_controller)
 #add_subdirectory(usb/host/midi_rx)
-#add_subdirectory(usb/host/msc_file_explorer)
+##add_subdirectory(usb/host/msc_file_explorer)
 

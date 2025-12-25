@@ -1,8 +1,9 @@
 
 #include "rcc.h"
 #include "gpio.h"
+#include <stdint.h>
 
-#define AIRCR (volatile unsigned int *)0xE000ED0C
+#define AIRCR (volatile uint32_t *)0xE000ED0C
 #define SYSRESETREQ 2
 
 int main(void)

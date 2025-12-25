@@ -14,53 +14,58 @@ extern clock_info_t ci;
 void user_btn_init(void) {
 /* buttons  0:E3 1:E15 */
     *RCC_AHB4ENR |= (0x1u<<GPIOEEN);
-    *GPIOE_MODER &= ~((0x3u<<MODER3)|(0x3u<<MODER15));
-    *GPIOE_PUPDR &= ~((0x3u<<PUPDR3)|(0x3u<<PUPDR15));
-    *GPIOE_PUPDR |= (0x1u<<PUPDR3)|(0x1u<<PUPDR15);
+
+    gpio_ctrl(GPIOE, GPIO_MODE, GPIO3|GPIO15, MODE_INPUT);
+    gpio_ctrl(GPIOE, GPIO_PUPD, GPIO3|GPIO15, PUPD_PULLUP);
 }
 
 void user_dipswitch_init(void) {
 /* dip switch 0: 0:B4 1:B3 2:D7 3:D6 4:D5 5:D4
    dip switch 1: 0:B0 1:C5 2:C4 3:A7 4:A6 5:A5 */
     /* dipswitch 0|1 */
-    *RCC_AHB4ENR |= (0x1u<<GPIOAEN)|(0x1u<<GPIOBEN)|(0x1u<<GPIOCEN)|(0x1u<<GPIODEN);
+    *RCC_AHB4ENR |= (0x1u<<GPIOAEN)|(0x1u<<GPIOBEN)|
+                    (0x1u<<GPIOCEN)|(0x1u<<GPIODEN);
 
     /* dipswitch 0: */
-    *GPIOB_MODER &= ~((0x3u<<MODER3)|(0x3u<<MODER4));
-    *GPIOD_MODER &= ~((0x3u<<MODER4)|(0x3u<<MODER5)|(0x3u<<MODER6)|(0x3u<<MODER7));
-    *GPIOB_PUPDR |= (0x1u<<PUPDR3)|(0x1u<<PUPDR4);
-    *GPIOD_PUPDR |= (0x1u<<PUPDR4)|(0x1u<<PUPDR5)|(0x1u<<PUPDR6)|(0x1u<<PUPDR7);
+
+    gpio_ctrl(GPIOB, GPIO_MODE, GPIO3|GPIO4, MODE_INPUT);
+    gpio_ctrl(GPIOB, GPIO_PUPD, GPIO3|GPIO4, PUPD_PULLUP);
+
+    gpio_ctrl(GPIOD, GPIO_MODE, GPIO4|GPIO5|GPIO6|GPIO7, MODE_INPUT);
+    gpio_ctrl(GPIOD, GPIO_PUPD, GPIO4|GPIO5|GPIO6|GPIO7, PUPD_PULLUP);
 
     /* dipswitch 1: */
-    *GPIOA_MODER &= ~((0x3u<<MODER5)|(0x3u<<MODER6)|(0x3u<<MODER7));
-    *GPIOB_MODER &= ~((0x3u<<MODER0));
-    *GPIOC_MODER &= ~((0x3u<<MODER4)|(0x3u<<MODER5));
-    *GPIOA_PUPDR |= (0x1u<<PUPDR5)|(0x1u<<PUPDR6)|(0x1u<<PUPDR7);
-    *GPIOB_PUPDR |= (0x1u<<PUPDR0);
-    *GPIOC_PUPDR |= (0x1u<<PUPDR4)|(0x1u<<PUPDR5);
+
+    gpio_ctrl(GPIOA, GPIO_MODE, GPIO5|GPIO6|GPIO7, MODE_INPUT);
+    gpio_ctrl(GPIOA, GPIO_PUPD, GPIO5|GPIO6|GPIO7, PUPD_PULLUP);
+
+    gpio_ctrl(GPIOB, GPIO_MODE, GPIO0, MODE_INPUT);
+    gpio_ctrl(GPIOB, GPIO_PUPD, GPIO0, PUPD_PULLUP);
+
+    gpio_ctrl(GPIOC, GPIO_MODE, GPIO4|GPIO5, MODE_INPUT);
+    gpio_ctrl(GPIOC, GPIO_PUPD, GPIO4|GPIO5, PUPD_PULLUP);
 }
 void user_led_init(void) {
 /* leds D0 D1 C10 */
     *RCC_AHB4ENR |= (0x1u<<GPIOCEN)|(0x1u<<GPIODEN);
-    *GPIOD_MODER &= ~((0x3u<<MODER0)|(0x3u<<MODER1));
-    *GPIOD_MODER |= (0x1u<<MODER0)|(0x1u<<MODER1);
-    *GPIOC_MODER &= ~(0x3u<<MODER10);
-    *GPIOC_MODER |= (0x1u<<MODER10);
+
+    gpio_ctrl(GPIOC, GPIO_MODE, GPIO10, MODE_OUTPUT);
+    gpio_ctrl(GPIOD, GPIO_MODE, GPIO0|GPIO1, MODE_OUTPUT);
 }
 
 void user_enc_init(void) {
 /* encoder  (B6 AF2 TIM4_CH1) (B7 AF2 TIM4_CH2) */
     *RCC_AHB4ENR |= (0x1u<<GPIOBEN);
-    *GPIOB_MODER &= ~((0x3u<<MODER7)|(0x3u<<MODER6));
-    *GPIOB_MODER |= (0x2u<<MODER7)|(0x2u<<MODER6);
+
+    gpio_ctrl(GPIOB, GPIO_MODE, GPIO6|GPIO7, MODE_AF);
 
 /* rest of encoder configuration */
 #define TIM4EN 2
     *RCC_APB1LENR |= (1<<TIM4EN);
 
     /* AF mode outputs AF2 for PA6 and PA7, AF1 for PA8 and PA9 */
-    *GPIOA_AFRL &= ~((0xfu<<AFR7)|(0xfu<<AFR6));
-    *GPIOB_AFRL |= (0x2u<<AFR7)|(0x2u<<AFR6);
+
+    gpio_ctrl(GPIOB, GPIO_AFRL, GPIO6|GPIO7, AF2);
 
 #define CC4E 12 
 #define CC3E 8
@@ -77,6 +82,7 @@ void user_enc_init(void) {
     // Configure TIM3 and TIM1 for Encoder Input Mode
     *TIM4_SMCR |= (0x3u << SMS);  // Encoder mode 3: Counts on both TI1 and TI2
     *TIM4_CCMR1 &= ~0xFFFF;
+
     // Set channels as input mapped to TI1 and TI2
     *TIM4_CCMR1 |= (0x2u << CC2S) | (0x2u << CC1S);
     *TIM4_ARR = 0xFFFF;
@@ -85,8 +91,8 @@ void user_enc_init(void) {
 #define CEN 0
     *TIM4_CR1 |= (1<<CEN);
     *TIM4_CNT = 1;
-
 }
+
 void user_serial_init(void) {
     init_usart1_pa10_pa9(&ci,115200);
 }

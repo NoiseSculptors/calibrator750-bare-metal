@@ -183,7 +183,7 @@ function(noisesculptors_add_tinyusb_for_app APP_TARGET APP_CONFIG_DIR)
   target_compile_definitions(${TU_OBJ} PRIVATE
     CFG_TUSB_OS=OPT_OS_NONE
     CFG_TUSB_MCU=OPT_MCU_STM32H7
-#   $<$<CONFIG:Debug>:CFG_TUSB_DEBUG=2>
+    $<$<CONFIG:Debug>:CFG_TUSB_DEBUG=2>
   )
 
   # but they DO NOT propagate to APP_TARGET via $<TARGET_OBJECTS:>.
