@@ -49,6 +49,11 @@ user_enc_sample_t user_enc_read(size_t idx);
 /* ---- Displays ---- */
 size_t user_display_count(void);
 void   user_display_flush(size_t idx, const void* buf, size_t bytes);
+void   user_display_set_pixel(size_t i, int x, int y, uint16_t color);
+int    fb_printf(int x, int y, const char *fmt, ...);
+
+/* ---- User systick service ---- */
+void   user_systick_service(void);
 
 /* ---- Serial/UART ---- */
 size_t user_serial_count(void);
@@ -59,6 +64,7 @@ int    user_serial_read_char(size_t idx);
 void   hexdump(uint32_t addr, size_t len);
 
 #ifdef __cplusplus
+
 }
 #endif
 

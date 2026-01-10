@@ -1,13 +1,18 @@
 
 // user_io.c (strong overrides)
-#include "user_io.h"
-#include "user_io_config.h"
+#include "dma.h"
+#include "dmamux.h"
 #include "gpio.h"
-#include "rcc.h"
+#include "i2c.h"
 #include "printf.h"
+#include "rcc.h"
 #include "serial.h"
+#include "ssd1315.h"
 #include "syscall.h"
 #include "timer.h"
+#include "user_io.h"
+#include "user_io_config.h"
+#include <string.h>
 
 extern clock_info_t ci;
 
@@ -97,13 +102,165 @@ void user_serial_init(void) {
     init_usart1_pa10_pa9(&ci,115200);
 }
 
-void user_io_init(void) {
-    user_btn_init();
-    user_dipswitch_init();
-    user_led_init();
-    user_enc_init();
-    user_serial_init();
+/********** Display ***********************************************************/
+
+/*
+ * The framebuffer is kept free of I2C control bytes to make it easy to use.
+ *
+ * DMA cannot transfer the full framebuffer in one shot (limit ~254 bytes),
+ * and every I2C data transfer requires at least a leading 0x40 control byte.
+ * Embedding 0x40 into the framebuffer would make drawing logic awkward,
+ * especially in non-page addressing modes.
+ *
+ * Using page addressing mode allows each page to be sent with a small
+ * 3-byte header followed by raw pixel data.
+ */
+
+#define OLED_WIDTH     128
+#define OLED_HEIGHT    64
+#define OLED_ROWS 8
+#define OLED_ADDR 0x3C
+#define HDR_SIZE  3
+#define STRIDE_SIZE    (HDR_SIZE + OLED_WIDTH)
+#define I2CPERIPH I2C3
+
+uint8_t oled_buf[OLED_ROWS * STRIDE_SIZE];
+extern uint8_t font_8x8_linux[256*8];
+uint8_t *fb_128_64[1024]; // contiguous pointer filled, for convenience
+
+static void init_dma_oled(void){
+    uint8_t dma_request_mux_input = 74;
+    *RCC_AHB1ENR |= (1u<<0); // DMA1EN
+    *DMAMUX1_C6CR = 0; // clear first
+    *DMAMUX1_C6CR = (dma_request_mux_input & 0x7F);
+    *DMA1_S6CR &= ~1u;
+    while (*DMA1_S6CR & 1u) {}
+    *DMA1_S6PAR  = (uint32_t)I2C_TXDR(I2CPERIPH);
+    *DMA1_S6CR = (1u<<10) // MINC=1
+               | (1u<<6); // DIR = Memory to peripheral
+    *I2C_CR1(I2CPERIPH) |= (1u<<14)  // TXDMAEN
+                     | (1u<<0);   // enable
+
+    /* set page addressing mode */
+    i2c_write_bytes(I2CPERIPH, OLED_ADDR, (uint8_t[]){
+               0x00, 0x20, 0x02, // Set Page Addressing Mode (0x00/0x01/0x02)
+               0x00, 0x00,       // lower column = 0
+               0x00, 0x10,       // higher column = 0
+           }, 7);
+
+    for (uint8_t row = 0; row < OLED_ROWS; row++)
+    {
+        uint8_t *b = &oled_buf[row * STRIDE_SIZE];
+
+// NOTE:
+// The control byte for commands *must* use the continuation bit (0x80)
+// if command bytes and the following data bytes are sent in the same
+// I2C transaction (same START..STOP frame).
+
+        // Minimal header per row
+        b[0] = 0x80;                   // cmd control 
+        b[1] = 0xB0 | (row & 0x0F);    // page address
+        b[2] = 0x40;                   // DATA
+
+     /* init with every other row turned on for debugging purposes */
+        memset(&b[HDR_SIZE], 0x00, OLED_WIDTH);
+    }
 }
+
+static void oled_init(void) {
+    init_i2c3_pa8_pc9(&ci);
+    init_ssd1315(I2CPERIPH);
+    int i=0;
+    uint8_t *p;
+    p = oled_buf;
+    for(int row=0; row<OLED_ROWS; row++){
+        p+=HDR_SIZE;
+        for(int column = 0; column<OLED_WIDTH; column++){
+           fb_128_64[i] = p+i;
+           i++;
+        }
+    }
+    init_dma_oled();
+    ssd1315_set_contrast(1);
+}
+
+static void oled_systick_dma(void) {
+
+    /* non-blocking - dma is triggered only if last
+       i2c transaction is finished transfered */
+    if (*DMA1_S6CR & 1u)
+        return;
+
+    static uint8_t row = 0;
+    uint8_t* row_ptr = &oled_buf[row * STRIDE_SIZE];
+
+
+    *DMA1_HIFCR = (1u<<21)|(1u<<19);
+    *DMA1_S6M0AR = (uint32_t)row_ptr;
+    *DMA1_S6NDTR = STRIDE_SIZE;
+    *DMA1_S6CR |= (1<<0);
+    *I2C_CR2(I2CPERIPH) = ((OLED_ADDR<<1)&0x3FF)
+                     | (STRIDE_SIZE<<16)
+                     | (1u<<25)   // AUTOEND
+                     | (1u<<13);  // START
+
+    if (row++ >= OLED_ROWS)
+        row = 0;
+}
+
+void user_display_init(void) {
+    oled_init();
+}
+
+void user_display_set_pixel(size_t i, int x, int y, uint16_t color)
+{
+    switch(i){
+        case 0:
+            if ((unsigned)x >= OLED_WIDTH || (unsigned)y >= OLED_HEIGHT)
+                return;
+
+            uint8_t page = (uint8_t)(y >> 3);
+            uint8_t bit  = (uint8_t)(y & 7);
+
+            uint8_t *row = &oled_buf[page * STRIDE_SIZE + HDR_SIZE];
+            if(color==0)
+                row[x] &= (uint8_t)~(1u << bit);
+            else
+                row[x] |= (uint8_t)(1u << bit);
+        break;
+    }
+}
+
+size_t user_display_count(void) { return USER_NUM_DISPLAYS; }
+
+
+/* 8 rows * 14 characters + null byte */
+#define PRINTF_BUFSZ (8*14)+1
+
+int fb_printf(int x, int y, const char *fmt, ...) {
+    char buf[PRINTF_BUFSZ];
+    va_list ap;
+    va_start(ap, fmt);
+    int n = vsnprintf(buf, sizeof(buf), fmt, ap);
+    va_end(ap);
+    if(!buf[0]) return n;
+    int col = x, row = y;
+    for(const char *p = buf; *p; p++){
+        if(*p=='\n' || col>=14){
+            col=0; row++;
+            if(row>=OLED_ROWS) break;
+            if(*p=='\n') continue;
+        }
+        uint8_t *dst = oled_buf + 1 + row*STRIDE_SIZE + HDR_SIZE + col*9;
+        const uint8_t *g = font_8x8_linux + (*p)*8;
+        for(int i=0;i<8;i++)
+            dst[i] = g[i];
+        dst[8] = 0; col++;
+    }
+    return n;
+}
+
+/********** !Display **********************************************************/
 
 size_t user_btn_count(void) { return USER_NUM_BTNS; }
 uint8_t user_btn_read(size_t i)
@@ -158,14 +315,6 @@ uint32_t user_dipswitch_read(size_t idx){
     return -1;
 }
 
-size_t user_display_count(void) { return USER_NUM_DISPLAYS; }
-void user_display_flush(size_t i, const void* buf, size_t n)
-{
-    (void)i;
-    (void)buf;
-    (void)n;
-}
-
 size_t user_serial_count(void) { return USER_NUM_SERIALS; }
 
 void user_serial_write_char(size_t idx, int c) {
@@ -210,5 +359,18 @@ user_enc_sample_t user_enc_read(size_t idx)
     last = now;
 
     return (user_enc_sample_t){ .value = now, .delta = d16, .pushed = 0 };
+}
+
+/* assuming 1ms systick, it should be placed in the systick routine */
+void user_systick_service(void) {
+    oled_systick_dma();
+}
+
+void user_io_init(void) {
+    user_btn_init();
+    user_dipswitch_init();
+    user_led_init();
+    user_enc_init();
+    user_serial_init();
 }
 

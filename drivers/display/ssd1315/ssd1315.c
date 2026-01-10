@@ -46,7 +46,6 @@ static inline void ssd1315_data_bytes(const uint8_t *p, uint16_t n)
         p += chunk;
         n -= chunk;
     }
-
 }
 
 static void ssd1315_set_addr_window(uint8_t x0, uint8_t x1, uint8_t page0, uint8_t page1)

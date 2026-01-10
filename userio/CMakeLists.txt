@@ -2,10 +2,10 @@
 cmake_minimum_required(VERSION 3.19)
 project(app_userio C)
 
-add_library(app_userio STATIC serial.c user_io_default.c)
+add_library(app_userio STATIC serial.c user_io_default.c font.c)
 add_library(lib::userio ALIAS app_userio)
 
-target_link_libraries(app_userio PUBLIC lib::printf)
+target_link_libraries(app_userio PUBLIC lib::printf driver::ssd1315)
 
 target_include_directories(app_userio PUBLIC
   ${CMAKE_CURRENT_SOURCE_DIR}
