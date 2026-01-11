@@ -135,11 +135,13 @@ static void init_dma_oled(void){
     *DMAMUX1_C6CR = (dma_request_mux_input & 0x7F);
     *DMA1_S6CR &= ~1u;
     while (*DMA1_S6CR & 1u) {}
-    *DMA1_S6PAR  = (uint32_t)I2C_TXDR(I2CPERIPH);
-    *DMA1_S6CR = (1u<<10) // MINC=1
+    *DMA1_S6PAR = (uint32_t)I2C_TXDR(I2CPERIPH);
+    *DMA1_S6CR = (2u<<16) // PL priority level 2:high
+               | (1u<<10) // MINC=1
                | (1u<<6); // DIR = Memory to peripheral
-    *I2C_CR1(I2CPERIPH) |= (1u<<14)  // TXDMAEN
-                     | (1u<<0);   // enable
+//               | (1<<5);  // Peripheral is the flow controller
+    *I2C_CR1(I2CPERIPH) |= (1u<<14) // TXDMAEN
+                     | (1u<<0); // enable
 
     /* set page addressing mode */
     i2c_write_bytes(I2CPERIPH, OLED_ADDR, (uint8_t[]){
@@ -186,30 +188,36 @@ static void oled_init(void) {
 
 static void oled_systick_dma(void) {
 
+    static uint8_t row = 0;
+
     /* non-blocking - dma is triggered only if last
        i2c transaction is finished transfered */
     if (*DMA1_S6CR & 1u)
         return;
 
-    static uint8_t row = 0;
     uint8_t* row_ptr = &oled_buf[row * STRIDE_SIZE];
-
 
     *DMA1_HIFCR = (1u<<21)|(1u<<19);
     *DMA1_S6M0AR = (uint32_t)row_ptr;
     *DMA1_S6NDTR = STRIDE_SIZE;
-    *DMA1_S6CR |= (1<<0);
+    *DMA1_S6CR |= (1<<0); //enable
     *I2C_CR2(I2CPERIPH) = ((OLED_ADDR<<1)&0x3FF)
                      | (STRIDE_SIZE<<16)
                      | (1u<<25)   // AUTOEND
                      | (1u<<13);  // START
 
-    if (row++ >= OLED_ROWS)
+    if (++row >= OLED_ROWS)
         row = 0;
 }
 
 void user_display_init(void) {
     oled_init();
+}
+
+void user_display_clear(void)
+{
+    for (uint8_t row = 0; row < OLED_ROWS; row++)
+        memset(&oled_buf[(row * STRIDE_SIZE) + HDR_SIZE], 0x00, OLED_WIDTH);
 }
 
 void user_display_set_pixel(size_t i, int x, int y, uint16_t color)
