@@ -173,6 +173,43 @@ pyocd load <your_firmware>.bin --target stm32h750xx --base 0x24000000
 
 ---
 
+## Debugging (Example using ST-LINK/V2 debugging probe)
+
+This section shows an example workflow for debugging a bare-metal application on an STM32H7 target using ST-LINK/V2 (SWD) and OpenOCD.
+
+Prerequisites:
+
+An OpenOCD and gdb-multiarch installation available in your system.
+A built ELF file (e.g., blink.elf in build directory), containing symbols and the program to flash.
+ST-LINK/V2 connected to the target via SWD.
+
+Step 1: Start OpenOCD using the ST-LINK/V2 interface configuration and the STM32H7 target configuration:
+
+```bash
+openocd -f /usr/share/openocd/scripts/interface/stlink-v2.cfg \
+        -f /usr/share/openocd/scripts/target/stm32h7x.cfg
+```
+
+Leave this terminal running. OpenOCD will provide a GDB server interface (by default on port 3333).
+
+Step 2: Start GDB
+In a second terminal (or another window), start GDB and load the target ELF file:
+
+```bash
+gdb-multiarch <path-to-bare-metal-file>.elf
+```
+Step 3: Connect GDB to OpenOCD and Flash
+Inside the GDB prompt, connect to the OpenOCD server and load the program:
+
+```bash
+target extended-remote :3333
+load
+```
+target extended-remote :3333 connects GDB to OpenOCD’s GDB server.
+load flashes the ELF contents to the target (and/or sets up the program as required by the OpenOCD configuration).
+
+---
+
 ## Directory Layout
 
 ```
@@ -201,7 +238,7 @@ sudo apt install gcc-arm-none-eabi cmake
 
 ## License
 
-© 2025 Noise Sculptors with help of ChatGPT-5,5.1
+© 2025-2026 Noise Sculptors
 
 External libraries retain their respective licenses.
 
