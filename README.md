@@ -122,21 +122,21 @@ Flashing **without a probe** is also possible via USB by booting (reset) with th
 ### Using the Calibrator750-Trampoline
 
 If you prefer to **run applications entirely from RAM**, flash the tiny
-[Calibrator750-trampoline](https://github.com/NoiseSculptors/calibrator750-trampoline) once to flash memory at `0x08000000`:
+trampoline_h750.bin once to flash memory at `0x08000000`:
 
 For example:
 
 ```bash
-st-flash write <your_firmware>.bin 0x08000000
+st-flash build/lib/noisesculptors-core/startup/common/trampoline_h750.bin 0x08000000
 ```
 
 or
 
 ```bash
-pyocd load <your_firmware>.bin --target stm32h750xx --base 0x24000000
+pyocd load build/lib/noisesculptors-core/startup/common/trampoline_h750.bin --target stm32h750xx --base 0x8000000
 ```
 
-The trampoline's job is to forward reset to a RAM-resident app  by default at
+The trampoline's job is to forward reset to a RAM-resident app by default at
 `APP_BASE = 0x24000000` (AXI SRAM on STM32H750).
 
 To be able to "flash" to 0x24000000 memory address, please add the following address region to pyocd: 
@@ -159,13 +159,7 @@ To be able to "flash" to 0x24000000 memory address, please add the following add
              is_powered_on_boot=False),
 ```
 
-After the trampoline is in place, after
-
-```bash
-pyocd load trampoline_h750.bin --target stm32h750xx --base 0x8000000
-```
-
-simply load your real application into RAM:
+After the trampoline is in place and your application is built with -DRUN=axi, simply load it into RAM:
 
 ```bash
 pyocd load <your_firmware>.bin --target stm32h750xx --base 0x24000000
