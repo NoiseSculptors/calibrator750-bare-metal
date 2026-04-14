@@ -219,29 +219,6 @@ void lcd_init(void)
     lcd_command(0x3A); delay_cmd();      // COLMOD
     parameter[0]=0x55;
     lcd_data(parameter,1); delay_cmd();  // COLMOD = 65K 16bit/pixel
-/*
-MADCTL (Memory Data Access Control)
-(default: 0);
-Bit D7- Page Address Order
-“0” = Top to Bottom (When MADCTL D7=”0”).
-“1” = Bottom to Top (When MADCTL D7=”1”).
-Bit D6- Column Address Order
-“0” = Left to Right (When MADCTL D6=”0”).
-“1” = Right to Left (When MADCTL D6=”1”).
-Bit D5- Page/Column Order
-“0” = Normal Mode (When MADCTL D5=”0”).
-“1” = Reverse Mode (When MADCTL D5=”1”)
-Note: Bits D7 to D5, alse refer to section 8.12 Address Control
-Bit D4- Line Address Order
-“0” = LCD Refresh Top to Bottom (When MADCTL D4=”0”)
-“1” = LCD Refresh Bottom to Top (When MADCTL D4=”1”)
-Bit D3- RGB/BGR Order
-“0” = RGB (When MADCTL D3=”0”)
-“1” = BGR (When MADCTL D3=”1”)
-Bit D2- Display Data Latch Data Order
-“0” = LCD Refresh Left to Right (When MADCTL D2=”0”)
-“1” = LCD Refresh Right to Left (When MADCTL D2=”1”)
-*/
     lcd_command(0x36); delay_cmd();     // MADCTL
     uint8_t madctl=0b01100000;                
     parameter[0] = madctl;
