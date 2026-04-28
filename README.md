@@ -165,6 +165,13 @@ After the trampoline is in place and your application is built with -DRUN=axi, s
 pyocd load <your_firmware>.bin --target stm32h750xx --base 0x24000000
 ```
 
+Alternatively, you can load it without modifying `target_STM32H750xx.py` through 
+generic `cortex_m` target:
+
+```bash
+pyocd load <your_firmware>.bin --target cortex_m--base 0x24000000
+```
+
 ---
 
 ## Debugging (Example using ST-LINK/V2 debugging probe)
