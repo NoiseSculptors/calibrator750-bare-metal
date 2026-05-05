@@ -284,9 +284,9 @@ size_t user_led_count(void) { return USER_NUM_LEDS; }
 void user_led_write(size_t i, uint8_t on)
 {
     switch(i){
-        case 0: on==1?*GPIOD_BSRR|=(1<<BS1) : (*GPIOD_BSRR|=(1<<BR1));break;
-        case 1: on==1?*GPIOD_BSRR|=(1<<BS0) : (*GPIOD_BSRR|=(1<<BR0));break;
-        case 2: on==1?*GPIOC_BSRR|=(1<<BS10): (*GPIOC_BSRR|=(1<<BR10));break;
+        case 0: on==1?*GPIOD_BSRR|=BS1 : (*GPIOD_BSRR|=BR1);break;
+        case 1: on==1?*GPIOD_BSRR|=BS0 : (*GPIOD_BSRR|=BR0);break;
+        case 2: on==1?*GPIOC_BSRR|=BS10: (*GPIOC_BSRR|=BR10);break;
     }
 }
 
